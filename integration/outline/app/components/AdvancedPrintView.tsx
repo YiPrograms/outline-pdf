@@ -14,6 +14,7 @@ import type {
   RenderedDocument,
   PrintComment,
 } from "../../../../src/types";
+import type { PageNumberPosition } from "../../../../src/pageNumbers";
 import { pageNumberStyles } from "../../../../src/pageNumbers";
 import { paginate } from "../../../../src/paginate";
 import type { PageLayout } from "../../../../src/paginate";
@@ -48,6 +49,8 @@ function PrintContent({
     margin: 15,
   });
   const [marginInput, setMarginInput] = React.useState("15");
+  const [numberPosition, setNumberPosition] =
+    React.useState<PageNumberPosition>("bottom-center");
   const [numberCss, setNumberCss] = React.useState("");
   const printSource = React.useRef<HTMLDivElement | null>(null);
   const paginated =
@@ -128,7 +131,11 @@ function PrintContent({
     if (!contentReady || !snapshot || !output.current) return;
     if (!paginated) {
       setNumberCss(
-        pageNumberStyles(output.current, snapshot.options.pageNumbers),
+        pageNumberStyles(
+          output.current,
+          snapshot.options.pageNumbers,
+          numberPosition,
+        ),
       );
       setReady(true);
       return;
@@ -146,6 +153,7 @@ function PrintContent({
       output.current,
       layout,
       snapshot.options.pageNumbers as "continuous" | "document",
+      numberPosition,
       controller.signal,
     )
       .then((dispose) => {
@@ -160,7 +168,7 @@ function PrintContent({
       controller.abort();
       cleanup?.();
     };
-  }, [contentReady, snapshot, layout, paginated]);
+  }, [contentReady, snapshot, layout, paginated, numberPosition]);
   const source = snapshot?.documents[index];
   return (
     <main
@@ -183,74 +191,104 @@ function PrintContent({
         >
           {t("Print to PDF")}
         </button>
-        {paginated && (
+        {snapshot && snapshot.options.pageNumbers !== "none" && (
           <div className="print-layout-controls">
             <label>
-              {t("Paper size")}
+              {t("Page number position")}
               <select
-                aria-label={t("Paper size")}
-                value={layout.paper}
+                aria-label={t("Page number position")}
+                value={numberPosition}
                 disabled={!contentReady || (!ready && !error)}
                 onChange={(event) => {
                   setReady(false);
-                  setLayout({
-                    ...layout,
-                    paper: event.target.value as PageLayout["paper"],
-                  });
+                  setNumberPosition(event.target.value as PageNumberPosition);
                 }}
               >
-                {["A4", "A3", "Letter"].map((paper) => (
-                  <option key={paper}>{paper}</option>
+                {(
+                  [
+                    ["top-left", "Top left"],
+                    ["top-right", "Top right"],
+                    ["bottom-left", "Bottom left"],
+                    ["bottom-center", "Bottom center"],
+                    ["bottom-right", "Bottom right"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {t(label)}
+                  </option>
                 ))}
               </select>
             </label>
-            <label>
-              {t("Orientation")}
-              <select
-                aria-label={t("Orientation")}
-                value={layout.orientation}
-                disabled={!contentReady || (!ready && !error)}
-                onChange={(event) => {
-                  setReady(false);
-                  setLayout({
-                    ...layout,
-                    orientation: event.target
-                      .value as PageLayout["orientation"],
-                  });
-                }}
-              >
-                <option value="portrait">{t("Portrait")}</option>
-                <option value="landscape">{t("Landscape")}</option>
-              </select>
-            </label>
-            <label>
-              {t("Margins (mm)")}
-              <input
-                type="number"
-                aria-label={t("Margins (mm)")}
-                min="5"
-                max="40"
-                value={marginInput}
-                disabled={!contentReady || (!ready && !error)}
-                onChange={(event) => setMarginInput(event.target.value)}
-                onBlur={() => {
-                  const margin = Math.min(
-                    40,
-                    Math.max(5, Number(marginInput) || 15),
-                  );
-                  setMarginInput(String(margin));
-                  if (margin !== layout.margin) {
-                    setReady(false);
-                    setLayout({ ...layout, margin });
-                  }
-                }}
-              />
-            </label>
-            <span>
-              {t(
-                "Use the same paper size, no margins, and 100% scale in the print dialog.",
-              )}
-            </span>
+            {paginated && (
+              <>
+                <label>
+                  {t("Paper size")}
+                  <select
+                    aria-label={t("Paper size")}
+                    value={layout.paper}
+                    disabled={!contentReady || (!ready && !error)}
+                    onChange={(event) => {
+                      setReady(false);
+                      setLayout({
+                        ...layout,
+                        paper: event.target.value as PageLayout["paper"],
+                      });
+                    }}
+                  >
+                    {["A4", "A3", "Letter"].map((paper) => (
+                      <option key={paper}>{paper}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  {t("Orientation")}
+                  <select
+                    aria-label={t("Orientation")}
+                    value={layout.orientation}
+                    disabled={!contentReady || (!ready && !error)}
+                    onChange={(event) => {
+                      setReady(false);
+                      setLayout({
+                        ...layout,
+                        orientation: event.target
+                          .value as PageLayout["orientation"],
+                      });
+                    }}
+                  >
+                    <option value="portrait">{t("Portrait")}</option>
+                    <option value="landscape">{t("Landscape")}</option>
+                  </select>
+                </label>
+                <label>
+                  {t("Margins (mm)")}
+                  <input
+                    type="number"
+                    aria-label={t("Margins (mm)")}
+                    min="5"
+                    max="40"
+                    value={marginInput}
+                    disabled={!contentReady || (!ready && !error)}
+                    onChange={(event) => setMarginInput(event.target.value)}
+                    onBlur={() => {
+                      const margin = Math.min(
+                        40,
+                        Math.max(5, Number(marginInput) || 15),
+                      );
+                      setMarginInput(String(margin));
+                      if (margin !== layout.margin) {
+                        setReady(false);
+                        setLayout({ ...layout, margin });
+                      }
+                    }}
+                  />
+                </label>
+                <span>
+                  {t(
+                    "Use the same paper size, no margins, and 100% scale in the print dialog.",
+                  )}
+                </span>
+              </>
+            )}
           </div>
         )}
         <span

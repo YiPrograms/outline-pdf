@@ -58,7 +58,7 @@ Open **Document options → Export → Print to PDF…**, or the equivalent expo
 
 Choose the scope and options, then select **Open print view → Print to PDF**. Set the paper size, scale, margins, and destination in your browser’s print dialog.
 
-For page numbers, use a current Chromium-based browser. Numbered tables of contents include paper and margin controls in the preview; print with the same paper, no browser margins, and 100% scale.
+For page numbers, use a current Chromium-based browser and choose their position in the print view. Numbered tables of contents include paper and margin controls in the preview; print with the same paper, no browser margins, and 100% scale.
 
 Printing follows Outline’s download permissions. Embedded content depends on the browser and the source service; check the preview before printing.
 

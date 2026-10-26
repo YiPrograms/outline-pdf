@@ -1,5 +1,5 @@
 import { Previewer } from "pagedjs";
-import type { PageNumbers } from "./pageNumbers.js";
+import type { PageNumbers, PageNumberPosition } from "./pageNumbers.js";
 
 export interface PageLayout {
   paper: "A4" | "A3" | "Letter";
@@ -13,6 +13,7 @@ export async function paginate(
   target: HTMLElement,
   layout: PageLayout,
   mode: Exclude<PageNumbers, "none">,
+  position: PageNumberPosition,
   signal: AbortSignal,
 ) {
   signal.throwIfAborted();
@@ -49,7 +50,7 @@ export async function paginate(
     layout.orientation === "landscape" ? [...dimensions].reverse() : dimensions;
   const css = `
     @page { size: ${width}mm ${height}mm; margin: ${layout.margin}mm;
-      @bottom-center { content: " "; font: 9pt sans-serif; color: #555; }
+      @${position} { content: " "; font: 9pt sans-serif; color: #555; text-align: ${position.split("-")[1]}; }
     }
     .pdf-chapter { break-before: page; }
     .paginated .pdf-cover { min-height: 0; height: calc(var(--pagedjs-pagebox-height) - var(--pagedjs-margin-top) - var(--pagedjs-margin-bottom)); break-after: page; }
@@ -82,12 +83,12 @@ export async function paginate(
       if (documentId && mode === "document") {
         const page = (documentPages.get(documentId) ?? 0) + 1;
         documentPages.set(documentId, page);
-        label = `${documentId.padStart(2, "0")}-${String(page).padStart(2, "0")}`;
+        label = `${documentId}-${page}`;
       }
-      const footer = element.querySelector(
-        ".pagedjs_margin-bottom-center .pagedjs_margin-content",
+      const number = element.querySelector(
+        `.pagedjs_margin-${position} .pagedjs_margin-content`,
       );
-      if (footer) footer.textContent = label;
+      if (number) number.textContent = label;
       for (const anchor of element.querySelectorAll<HTMLElement>("[id]"))
         if (!anchors.has(anchor.id)) anchors.set(anchor.id, label);
     });

@@ -26,5 +26,11 @@
   "Portrait": "纵向",
   "Landscape": "横向",
   "Margins (mm)": "边距（mm）",
-  "Use the same paper size, no margins, and 100% scale in the print dialog.": "打印窗口请使用相同纸张、无边距、100% 缩放。"
+  "Use the same paper size, no margins, and 100% scale in the print dialog.": "打印窗口请使用相同纸张、无边距、100% 缩放。",
+  "Page number position": "页码位置",
+  "Top left": "左上",
+  "Top right": "右上",
+  "Bottom left": "左下",
+  "Bottom center": "下方中间",
+  "Bottom right": "右下"
 }

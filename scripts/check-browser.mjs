@@ -366,8 +366,106 @@ try {
     printBackground: true,
   });
   const documentLabels = pdfFooters(documentPdf);
-  for (let i = 1; i <= 8; i++)
-    assert.ok(documentLabels.includes(`${String(i).padStart(2, "0")}-01`));
+  for (let i = 1; i <= 8; i++) assert.ok(documentLabels.includes(`${i}-1`));
+  const positions = [
+    "top-left",
+    "top-right",
+    "bottom-left",
+    "bottom-center",
+    "bottom-right",
+  ];
+  const checkNumberPositions = async (view, paginated) => {
+    for (const position of positions) {
+      await view
+        .getByLabel("Page number position", { exact: true })
+        .selectOption(position);
+      await view.waitForFunction(
+        () => document.getElementById("print-button")?.disabled === false,
+      );
+      const file = path.join(
+        output,
+        `page-position-${paginated ? "paginated" : "native"}-${position}.pdf`,
+      );
+      await view.pdf({
+        path: file,
+        preferCSSPageSize: true,
+        printBackground: true,
+      });
+      const bounds = execFileSync("pdftotext", ["-bbox", file, "-"], {
+        encoding: "utf8",
+      });
+      const pages = [
+        ...bounds.matchAll(
+          /<page width="([\d.]+)" height="([\d.]+)">([\s\S]*?)<\/page>/g,
+        ),
+      ];
+      assert.ok(pages.length > 8);
+      const labels = [];
+      for (const [, width, height, body] of pages) {
+        const numbers = [
+          ...body.matchAll(
+            /<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">([1-9]\d*(?:-[1-9]\d*)?)<\/word>/g,
+          ),
+        ].filter(
+          ([, , yMin, , yMax]) =>
+            Number(yMax) - Number(yMin) < 11 &&
+            (position.startsWith("top")
+              ? Number(yMax) < 45
+              : Number(yMin) > Number(height) - 45),
+        );
+        assert.equal(
+          numbers.length,
+          1,
+          `One page number per page: ${position}`,
+        );
+        const [, xMin, yMin, xMax, yMax, label] = numbers[0];
+        const x = (Number(xMin) + Number(xMax)) / 2 / Number(width);
+        const y = (Number(yMin) + Number(yMax)) / 2 / Number(height);
+        assert.ok(
+          position.startsWith("top") ? y < 0.1 : y > 0.9,
+          `Page number vertical position: ${position} (${y})`,
+        );
+        assert.ok(
+          position.endsWith("left")
+            ? x < 0.25
+            : position.endsWith("right")
+              ? x > 0.75
+              : Math.abs(x - 0.5) < 0.02,
+          `Page number horizontal position: ${position} (${x})`,
+        );
+        labels.push(label);
+      }
+      if (paginated) {
+        assert.deepEqual(
+          await view
+            .locator(`.pagedjs_margin-${position} .pagedjs_margin-content`)
+            .allTextContents(),
+          labels,
+        );
+        assert.equal(
+          await view.locator(".pdf-toc a, .pdf-document-toc a").evaluateAll(
+            (links, position) =>
+              links.filter((link) => {
+                const target = document.getElementById(
+                  decodeURIComponent(link.hash.slice(1)),
+                );
+                const number = target
+                  ?.closest(".pagedjs_page")
+                  ?.querySelector(
+                    `.pagedjs_margin-${position} .pagedjs_margin-content`,
+                  )?.textContent;
+                return (
+                  link.querySelector(".toc-page-number")?.textContent !== number
+                );
+              }).length,
+            position,
+          ),
+          0,
+        );
+      }
+    }
+  };
+  await checkNumberPositions(perDocument, false);
   await perDocument.close();
   const tocNumbers = page.getByRole("switch", {
     name: "Page numbers in table of contents",
@@ -385,7 +483,7 @@ try {
       .locator(".toc-page-number")
       .allTextContents();
     assert.equal(pageNumbers.length, 24);
-    assert.ok(pageNumbers.every((label) => /^\d{2}-\d{2}$/.test(label)));
+    assert.ok(pageNumbers.every((label) => /^[1-9]\d*-[1-9]\d*$/.test(label)));
     const file = path.join(output, filename);
     await numbered.pdf({
       path: file,
@@ -444,6 +542,7 @@ try {
     () => document.getElementById("print-button")?.disabled === false,
   );
   await checkPreview("toc-page-numbers-letter-landscape.pdf", [792, 612]);
+  await checkNumberPositions(numbered, true);
   await numbered.screenshot({
     path: path.join(output, "numbered-preview.png"),
   });
@@ -647,6 +746,7 @@ try {
     nativeWebEditor: true,
     nativePageNumbers: true,
     perDocumentPageNumbers: true,
+    pageNumberPositions: positions,
     paginatedTocPageNumbers: true,
     lightPrintInDarkMode: true,
     customPaperMarginsAndScale: true,
