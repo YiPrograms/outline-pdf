@@ -179,9 +179,14 @@ thead {
 @media print {
   html,
   body,
-  #root {
+  #root,
+  #root :has(.print-page) {
     height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     overflow: visible !important;
+    background: white !important;
+    color-scheme: light !important;
   }
   .print-staging {
     display: none !important;

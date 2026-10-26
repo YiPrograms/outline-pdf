@@ -1,4 +1,4 @@
-import { chromium } from "playwright-core";
+import { chromium, devices } from "playwright-core";
 import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
@@ -546,6 +546,58 @@ try {
   await numbered.screenshot({
     path: path.join(output, "numbered-preview.png"),
   });
+  const mobileUrl = new URL(numbered.url());
+  mobileUrl.searchParams.set("pageNumbers", "none");
+  mobileUrl.searchParams.set("tocPageNumbers", "false");
+  const mobileContext = await browser.newContext({
+    ...devices["Pixel 7"],
+    colorScheme: "dark",
+    locale: "en-US",
+  });
+  await mobileContext.addCookies([
+    {
+      name: "accessToken",
+      value: fixture.token,
+      url: base,
+      httpOnly: true,
+      sameSite: "Lax",
+    },
+  ]);
+  const mobile = await mobileContext.newPage();
+  mobile.on("pageerror", (error) => errors.push(error.message));
+  await mobile.goto(mobileUrl.href);
+  await mobile.waitForFunction(
+    () => document.getElementById("print-button")?.disabled === false,
+  );
+  await mobile.emulateMedia({ media: "print" });
+  assert.ok((await mobile.locator("#root :has(.print-page)").count()) > 0);
+  for (const ancestor of await mobile
+    .locator("html, body, #root, #root :has(.print-page)")
+    .all()) {
+    assert.deepEqual(
+      await ancestor.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          overflow: style.overflow,
+          background: style.backgroundColor,
+          clipped:
+            element !== document.documentElement &&
+            element.scrollHeight > element.clientHeight + 1,
+        };
+      }),
+      { overflow: "visible", background: "rgb(255, 255, 255)", clipped: false },
+    );
+  }
+  const mobilePdf = path.join(output, "mobile-print.pdf");
+  await mobile.pdf({ path: mobilePdf, format: "A4", printBackground: true });
+  assert.ok(
+    execFileSync("pdftotext", [mobilePdf, "-"], { encoding: "utf8" }).includes(
+      "DOC_TOKEN_8",
+    ),
+    "Mobile printing includes the last document",
+  );
+  await mobile.screenshot({ path: path.join(output, "mobile-print.png") });
+  await mobileContext.close();
   await numbered.close();
   await tocNumbers.uncheck();
   await showNumbers.uncheck();
@@ -744,6 +796,7 @@ try {
     internalLinks: true,
     nativePrintAction: true,
     nativeWebEditor: true,
+    mobilePrint: true,
     nativePageNumbers: true,
     perDocumentPageNumbers: true,
     pageNumberPositions: positions,
