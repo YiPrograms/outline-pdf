@@ -15,5 +15,16 @@
   "Diagrams unavailable: {{count}}": "圖表無法顯示：{{count}}",
   "Print preparation failed.": "列印內容準備失敗。",
   "Show comments": "顯示留言",
-  "Comments": "留言"
+  "Comments": "留言",
+  "Show page numbers": "顯示頁碼",
+  "Page numbering": "頁碼格式",
+  "Continuous page numbers": "整體文件頁碼",
+  "Per-document page numbers": "單獨文件頁碼",
+  "Page numbers in table of contents": "目錄顯示頁碼",
+  "Paper size": "紙張大小",
+  "Orientation": "方向",
+  "Portrait": "直向",
+  "Landscape": "橫向",
+  "Margins (mm)": "邊界（mm）",
+  "Use the same paper size, no margins, and 100% scale in the print dialog.": "列印視窗請使用相同紙張、無邊界、100% 縮放。"
 }

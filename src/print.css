@@ -79,13 +79,13 @@ thead {
 }
 .pdf-toc ol,
 .pdf-document-toc ol {
-  list-style: none;
+  list-style: disc outside;
   margin: 0;
   padding-inline-start: 1.25em;
 }
 .pdf-toc > ol,
 .pdf-document-toc > ol {
-  padding-inline-start: 0;
+  padding-inline-start: 1.25em;
 }
 .print-toolbar {
   position: sticky;
@@ -212,4 +212,95 @@ thead {
   margin-inline-start: 6mm;
   border-inline-start: 1px solid #ddd;
   padding-inline-start: 4mm;
+}
+
+.native-document .table-wrapper,
+.native-document .table-scrollable {
+  overflow: visible !important;
+  max-width: 100%;
+}
+.native-document table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed;
+}
+.native-document td,
+.native-document th {
+  transform: none !important;
+  position: static !important;
+  overflow-wrap: anywhere;
+  min-width: 0 !important;
+}
+@media print {
+  .native-document .table-scrollable {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .native-document tr {
+    break-inside: avoid;
+  }
+}
+
+.print-layout-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.print-layout-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.print-layout-controls input,
+.print-layout-controls select {
+  color: #111;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px;
+  font: inherit;
+}
+.print-layout-controls input {
+  width: 64px;
+}
+.print-output.paginated {
+  max-width: none;
+  padding: 0;
+}
+.paginated .pdf-toc a,
+.paginated .pdf-document-toc a {
+  display: block;
+  position: relative;
+  padding-inline-end: 5em;
+}
+.toc-page-number {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0;
+  font-variant-numeric: tabular-nums;
+}
+@media screen {
+  .pagedjs_page {
+    margin: 24px auto;
+    background: white;
+    box-shadow: 0 1px 6px #bbb;
+  }
+}
+@media print {
+  .pagedjs_page {
+    margin: 0;
+    box-shadow: none;
+  }
+}
+@media print {
+  .pagedjs_page:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  .pagedjs_page .pdf-chapter,
+  .pagedjs_page .pdf-cover {
+    break-before: auto;
+    break-after: auto;
+  }
 }

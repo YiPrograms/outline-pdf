@@ -8,7 +8,7 @@ interface NavigationNode {
 interface PMNode {
   type: string;
   text?: string;
-  attrs?: Record<string, string | number | boolean>;
+  attrs?: Record<string, unknown>;
   marks?: { type: string; attrs: Record<string, string> }[];
   content?: PMNode[];
 }
@@ -60,6 +60,23 @@ export function fixtureBook() {
         ],
       } satisfies PMNode,
     };
+  });
+  documents[8]!.content.content.unshift({
+    type: "table",
+    content: Array.from({ length: 41 }, (_, row) => ({
+      type: "tr",
+      content: Array.from({ length: 6 }, (_, col) => ({
+        type: row === 0 ? "th" : "td",
+        attrs: { colwidth: [380] },
+        content: [
+          paragraph(
+            row === 0
+              ? `COLUMN_${col}`
+              : `R${row}C${col} wrapping table content`,
+          ),
+        ],
+      })),
+    })),
   });
   const first = documents[0];
   const sibling = documents[9];

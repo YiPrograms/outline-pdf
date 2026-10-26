@@ -20,12 +20,21 @@ router.get(
       includeToc,
       includeHeadingToc,
       includeComments,
+      pageNumbers,
+      tocPageNumbers,
       language,
     } = ctx.input.query;
     const view = await AdvancedPrintService.create(ctx.state.auth.user, {
       sourceId,
       scope,
-      options: { includeCover, includeToc, includeHeadingToc, includeComments },
+      options: {
+        includeCover,
+        includeToc,
+        includeHeadingToc,
+        includeComments,
+        pageNumbers,
+        tocPageNumbers,
+      },
       language,
     });
     ctx.set("Cache-Control", "private, no-store");

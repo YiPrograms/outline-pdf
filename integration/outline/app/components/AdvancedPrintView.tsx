@@ -14,6 +14,9 @@ import type {
   RenderedDocument,
   PrintComment,
 } from "../../../../src/types";
+import { pageNumberStyles } from "../../../../src/pageNumbers";
+import { paginate } from "../../../../src/paginate";
+import type { PageLayout } from "../../../../src/paginate";
 import printCss from "../../../../src/print.css";
 
 /** Reuses Outline's web editor under a light theme without changing user preferences. */
@@ -38,6 +41,19 @@ function PrintContent({
   const [index, setIndex] = React.useState(0);
   const [ready, setReady] = React.useState(false);
   const [error, setError] = React.useState(false);
+  const [contentReady, setContentReady] = React.useState(false);
+  const [layout, setLayout] = React.useState<PageLayout>({
+    paper: "A4",
+    orientation: "portrait",
+    margin: 15,
+  });
+  const [marginInput, setMarginInput] = React.useState("15");
+  const [numberCss, setNumberCss] = React.useState("");
+  const printSource = React.useRef<HTMLDivElement | null>(null);
+  const paginated =
+    !!snapshot &&
+    snapshot.options.pageNumbers !== "none" &&
+    snapshot.options.tocPageNumbers;
   const [issues, setIssues] = React.useState<
     { kind: string; id: string; count: number }[]
   >([]);
@@ -100,7 +116,7 @@ function PrintContent({
         }
         output.current!.replaceChildren(fragment);
         setIssues(failures);
-        setReady(true);
+        setContentReady(true);
         setIndex(snapshot.documents.length);
       })
       .catch(() => {
@@ -108,6 +124,43 @@ function PrintContent({
       });
     return () => controller.abort();
   }, [snapshot, index]);
+  React.useEffect(() => {
+    if (!contentReady || !snapshot || !output.current) return;
+    if (!paginated) {
+      setNumberCss(
+        pageNumberStyles(output.current, snapshot.options.pageNumbers),
+      );
+      setReady(true);
+      return;
+    }
+    if (!printSource.current) {
+      printSource.current = document.createElement("div");
+      printSource.current.append(...output.current.childNodes);
+    }
+    setReady(false);
+    setError(false);
+    const controller = new AbortController();
+    let cleanup: (() => void) | undefined;
+    paginate(
+      printSource.current,
+      output.current,
+      layout,
+      snapshot.options.pageNumbers as "continuous" | "document",
+      controller.signal,
+    )
+      .then((dispose) => {
+        cleanup = dispose;
+        if (controller.signal.aborted) dispose();
+        else setReady(true);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setError(true);
+      });
+    return () => {
+      controller.abort();
+      cleanup?.();
+    };
+  }, [contentReady, snapshot, layout, paginated]);
   const source = snapshot?.documents[index];
   return (
     <main
@@ -120,6 +173,7 @@ function PrintContent({
       }}
     >
       <style>{printCss}</style>
+      <style>{numberCss}</style>
       <header className="print-toolbar">
         <button
           id="print-button"
@@ -129,6 +183,76 @@ function PrintContent({
         >
           {t("Print to PDF")}
         </button>
+        {paginated && (
+          <div className="print-layout-controls">
+            <label>
+              {t("Paper size")}
+              <select
+                aria-label={t("Paper size")}
+                value={layout.paper}
+                disabled={!contentReady || (!ready && !error)}
+                onChange={(event) => {
+                  setReady(false);
+                  setLayout({
+                    ...layout,
+                    paper: event.target.value as PageLayout["paper"],
+                  });
+                }}
+              >
+                {["A4", "A3", "Letter"].map((paper) => (
+                  <option key={paper}>{paper}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t("Orientation")}
+              <select
+                aria-label={t("Orientation")}
+                value={layout.orientation}
+                disabled={!contentReady || (!ready && !error)}
+                onChange={(event) => {
+                  setReady(false);
+                  setLayout({
+                    ...layout,
+                    orientation: event.target
+                      .value as PageLayout["orientation"],
+                  });
+                }}
+              >
+                <option value="portrait">{t("Portrait")}</option>
+                <option value="landscape">{t("Landscape")}</option>
+              </select>
+            </label>
+            <label>
+              {t("Margins (mm)")}
+              <input
+                type="number"
+                aria-label={t("Margins (mm)")}
+                min="5"
+                max="40"
+                value={marginInput}
+                disabled={!contentReady || (!ready && !error)}
+                onChange={(event) => setMarginInput(event.target.value)}
+                onBlur={() => {
+                  const margin = Math.min(
+                    40,
+                    Math.max(5, Number(marginInput) || 15),
+                  );
+                  setMarginInput(String(margin));
+                  if (margin !== layout.margin) {
+                    setReady(false);
+                    setLayout({ ...layout, margin });
+                  }
+                }}
+              />
+            </label>
+            <span>
+              {t(
+                "Use the same paper size, no margins, and 100% scale in the print dialog.",
+              )}
+            </span>
+          </div>
+        )}
         <span
           id="print-status"
           role={error || issues.length ? "alert" : "status"}
@@ -155,7 +279,10 @@ function PrintContent({
           <span>{t("Some documents were excluded.")}</span>
         )}
       </header>
-      <div className="print-output" ref={output} />
+      <div
+        className={paginated ? "print-output paginated" : "print-output"}
+        ref={output}
+      />
       {source && !error && (
         <div
           className="print-staging"

@@ -15,6 +15,10 @@ export function AdvancedPrintDialog({ sourceId, collection = false }: Props) {
   const [includeToc, setIncludeToc] = useState(true);
   const [includeHeadingToc, setIncludeHeadingToc] = useState(false);
   const [includeComments, setIncludeComments] = useState(false);
+  const [showPageNumbers, setShowPageNumbers] = useState(false);
+  const [pageNumbers, setPageNumbers] = useState("continuous");
+  const [tocPageNumbers, setTocPageNumbers] = useState(false);
+  const hasToc = (scope !== "document" && includeToc) || includeHeadingToc;
   const open = () => {
     const query = new URLSearchParams({
       sourceId,
@@ -23,6 +27,8 @@ export function AdvancedPrintDialog({ sourceId, collection = false }: Props) {
       includeToc: String(scope !== "document" && includeToc),
       includeHeadingToc: String(includeHeadingToc),
       includeComments: String(includeComments),
+      pageNumbers: showPageNumbers ? pageNumbers : "none",
+      tocPageNumbers: String(showPageNumbers && hasToc && tocPageNumbers),
       language,
     });
     window.open(`/print?${query}`, "_blank", "noopener,noreferrer");
@@ -88,6 +94,48 @@ export function AdvancedPrintDialog({ sourceId, collection = false }: Props) {
           onChange={(event) => setIncludeComments(event.target.checked)}
         />
       </Setting>
+      <Setting>
+        {t("Show page numbers")}
+        <Toggle
+          type="checkbox"
+          role="switch"
+          checked={showPageNumbers}
+          onChange={(event) => setShowPageNumbers(event.target.checked)}
+        />
+      </Setting>
+      {showPageNumbers && (
+        <>
+          <Scope>
+            <legend>{t("Page numbering")}</legend>
+            {[
+              ["continuous", "Continuous page numbers"],
+              ["document", "Per-document page numbers"],
+            ].map(([value, label]) => (
+              <label key={value}>
+                <input
+                  type="radio"
+                  name="print-page-numbers"
+                  value={value}
+                  checked={pageNumbers === value}
+                  onChange={(event) => setPageNumbers(event.target.value)}
+                />
+                {t(label)}
+              </label>
+            ))}
+          </Scope>
+          {hasToc && (
+            <Setting>
+              {t("Page numbers in table of contents")}
+              <Toggle
+                type="checkbox"
+                role="switch"
+                checked={tocPageNumbers}
+                onChange={(event) => setTocPageNumbers(event.target.checked)}
+              />
+            </Setting>
+          )}
+        </>
+      )}
       <Button type="button" onClick={open}>
         {t("Open print view")}
       </Button>

@@ -1,6 +1,6 @@
 # Outline PDF Print {{version}}
 
-Print documents, document trees, and collections using Outline’s native rendering. Includes linked tables of contents, optional comments, and a light print view. Paper size, margins, and PDF output are controlled by your browser.
+Print documents, document trees, and collections using Outline’s native rendering. Includes linked tables of contents, page numbering, optional comments, and a light print view. Numbered tables of contents provide paper and margin controls in the preview.
 
 Supports **Outline {{version}} on Linux x86-64**.
 

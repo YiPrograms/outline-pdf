@@ -98,12 +98,43 @@ export async function prepareNative(
       if (canvas.width && canvas.height)
         canvases[index]?.getContext("2d")?.drawImage(canvas, 0, 0);
     });
+    [...root.querySelectorAll("table")].forEach((table, index) => {
+      const columns = [
+        ...table.querySelectorAll<HTMLTableColElement>(
+          ":scope > colgroup > col",
+        ),
+      ];
+      const widths = columns.map(
+        (column) => column.getBoundingClientRect().width,
+      );
+      const total = widths.reduce((sum, width) => sum + width, 0);
+      [...copy.querySelectorAll("table")][index]
+        ?.querySelectorAll<HTMLTableColElement>(":scope > colgroup > col")
+        .forEach((column, index) => {
+          if (total) column.style.width = `${(widths[index]! / total) * 100}%`;
+          else column.style.removeProperty("width");
+        });
+    });
     copy.className = "native-document";
     copy.removeAttribute("aria-hidden");
     for (const node of copy.querySelectorAll(
       ".code-block.collapsed,.toggle-block.folded,.checklist-wrapper.completed-hidden",
     ))
       node.classList.remove("collapsed", "folded", "completed-hidden");
+    for (const table of copy.querySelectorAll<HTMLElement>(".table-wrapper")) {
+      table.classList.remove(
+        "table-sticky-header",
+        "table-sticky-column",
+        "table-shadow-left",
+        "table-shadow-right",
+      );
+      for (const property of [
+        "--sticky-scroll-offset",
+        "--table-height",
+        "--table-width",
+      ])
+        table.style.removeProperty(property);
+    }
     for (const node of copy.querySelectorAll(".ProseMirror-separator, button"))
       node.remove();
     for (const node of copy.querySelectorAll(

@@ -15,5 +15,16 @@
   "Diagrams unavailable: {{count}}": "Diagrams unavailable: {{count}}",
   "Print preparation failed.": "Print preparation failed.",
   "Show comments": "Show comments",
-  "Comments": "Comments"
+  "Comments": "Comments",
+  "Show page numbers": "Show page numbers",
+  "Page numbering": "Page numbering",
+  "Continuous page numbers": "Continuous page numbers",
+  "Per-document page numbers": "Per-document page numbers",
+  "Page numbers in table of contents": "Page numbers in table of contents",
+  "Paper size": "Paper size",
+  "Orientation": "Orientation",
+  "Portrait": "Portrait",
+  "Landscape": "Landscape",
+  "Margins (mm)": "Margins (mm)",
+  "Use the same paper size, no margins, and 100% scale in the print dialog.": "Use the same paper size, no margins, and 100% scale in the print dialog."
 }

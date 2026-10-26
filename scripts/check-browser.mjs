@@ -329,6 +329,128 @@ try {
   assert.equal(await documentContents.isChecked(), false);
   await documentContents.check();
 
+  const showNumbers = page.getByRole("switch", {
+    name: "Show page numbers",
+    exact: true,
+  });
+  assert.equal(await showNumbers.isChecked(), false);
+  await showNumbers.check();
+  const pdfFooters = (filename) =>
+    execFileSync("pdftotext", ["-layout", filename, "-"], { encoding: "utf8" })
+      .split("\f")
+      .filter((text) => text.trim())
+      .map((text) => text.trim().split("\n").at(-1).trim());
+  const continuous = await openView();
+  const continuousPdf = path.join(output, "page-numbers-continuous.pdf");
+  await continuous.pdf({
+    path: continuousPdf,
+    format: "Letter",
+    scale: 0.85,
+    printBackground: true,
+  });
+  const sequential = pdfFooters(continuousPdf);
+  assert.ok(sequential.length > 8);
+  assert.deepEqual(
+    sequential,
+    sequential.map((_, index) => String(index + 1)),
+  );
+  await continuous.close();
+  await page
+    .getByRole("radio", { name: "Per-document page numbers", exact: true })
+    .check();
+  const perDocument = await openView();
+  const documentPdf = path.join(output, "page-numbers-document.pdf");
+  await perDocument.pdf({
+    path: documentPdf,
+    format: "A4",
+    printBackground: true,
+  });
+  const documentLabels = pdfFooters(documentPdf);
+  for (let i = 1; i <= 8; i++)
+    assert.ok(documentLabels.includes(`${String(i).padStart(2, "0")}-01`));
+  await perDocument.close();
+  const tocNumbers = page.getByRole("switch", {
+    name: "Page numbers in table of contents",
+    exact: true,
+  });
+  await headingContents.check();
+  await tocNumbers.check();
+  const numbered = await openView();
+  const checkPreview = async (filename, expectedSize) => {
+    const labels = await numbered
+      .locator(".pagedjs_margin-bottom-center .pagedjs_margin-content")
+      .allTextContents();
+    assert.ok(labels.length > 8);
+    const pageNumbers = await numbered
+      .locator(".toc-page-number")
+      .allTextContents();
+    assert.equal(pageNumbers.length, 24);
+    assert.ok(pageNumbers.every((label) => /^\d{2}-\d{2}$/.test(label)));
+    const file = path.join(output, filename);
+    await numbered.pdf({
+      path: file,
+      preferCSSPageSize: true,
+      printBackground: true,
+    });
+    assert.deepEqual(pdfFooters(file), labels);
+    const bodyText = execFileSync("pdftotext", [file, "-"], {
+      encoding: "utf8",
+    });
+    assert.ok(bodyText.includes("LONG_CODE_44"));
+    assert.ok(bodyText.includes("DOC_TOKEN_8"));
+    assert.ok(
+      !execFileSync("pdfinfo", ["-url", file], { encoding: "utf8" }).includes(
+        "/print?",
+      ),
+      "Paginated contents links stay inside the PDF",
+    );
+    const information = execFileSync("pdfinfo", [file], { encoding: "utf8" });
+    assert.equal(
+      Number(information.match(/^Pages:\s+(\d+)/m)[1]),
+      labels.length,
+    );
+    const size = information
+      .match(/^Page size:\s+([\d.]+) x ([\d.]+) pts/m)
+      .slice(1)
+      .map(Number);
+    assert.ok(
+      size.every((value, index) => Math.abs(value - expectedSize[index]) < 1),
+      `Printed paper dimensions: ${size}`,
+    );
+    assert.equal(
+      await numbered
+        .locator(".pdf-toc ol")
+        .first()
+        .evaluate((element) => getComputedStyle(element).listStyleType),
+      "disc",
+    );
+  };
+  await checkPreview("toc-page-numbers-a4.pdf", [595.28, 841.89]);
+  await numbered
+    .getByLabel("Paper size", { exact: true })
+    .selectOption("Letter");
+  await numbered.waitForFunction(
+    () => document.getElementById("print-button")?.disabled === false,
+  );
+  await numbered
+    .getByLabel("Orientation", { exact: true })
+    .selectOption("landscape");
+  await numbered.waitForFunction(
+    () => document.getElementById("print-button")?.disabled === false,
+  );
+  await numbered.getByLabel("Margins (mm)", { exact: true }).fill("20");
+  await numbered.getByLabel("Margins (mm)", { exact: true }).press("Tab");
+  await numbered.waitForFunction(
+    () => document.getElementById("print-button")?.disabled === false,
+  );
+  await checkPreview("toc-page-numbers-letter-landscape.pdf", [792, 612]);
+  await numbered.screenshot({
+    path: path.join(output, "numbered-preview.png"),
+  });
+  await numbered.close();
+  await tocNumbers.uncheck();
+  await showNumbers.uncheck();
+
   const language = (lng) =>
     page.evaluate(
       async ({ value, bridgeUrl }) => {
@@ -382,6 +504,31 @@ try {
   await openDocumentDialog();
   const nextView = await openView();
   assert.equal(await nextView.locator(".pdf-chapter").count(), 1);
+  const tablePdf = path.join(output, "wide-multipage-table.pdf");
+  await nextView.pdf({ path: tablePdf, format: "A4", printBackground: true });
+  const tableText = execFileSync("pdftotext", [tablePdf, "-"], {
+    encoding: "utf8",
+  });
+  assert.ok(
+    tableText.includes("R40C5"),
+    "The final table cell remains printable",
+  );
+  assert.ok(
+    !(await nextView
+      .locator(".table-sticky-header,.table-sticky-column")
+      .count()),
+  );
+  await nextView.emulateMedia({ media: "print" });
+  assert.ok(
+    await nextView
+      .locator("table")
+      .first()
+      .evaluate(
+        (table) =>
+          table.getBoundingClientRect().width <=
+          table.closest(".native-document").getBoundingClientRect().width + 1,
+      ),
+  );
   await nextView.close();
   await page.keyboard.press("Escape");
   const collection = await page.evaluate(
@@ -498,6 +645,9 @@ try {
     internalLinks: true,
     nativePrintAction: true,
     nativeWebEditor: true,
+    nativePageNumbers: true,
+    perDocumentPageNumbers: true,
+    paginatedTocPageNumbers: true,
     lightPrintInDarkMode: true,
     customPaperMarginsAndScale: true,
     localizedUi: ["en-US", "zh-TW", "zh-CN"],

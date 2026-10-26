@@ -284,7 +284,10 @@ async function main() {
   checks.push(
     "unauthenticated, invalid scopes and another user's personal space are rejected",
   );
+  await view(first.id, "document", 400, { pageNumbers: "invalid" });
   const withoutComments = await view(first.id);
+  assert.equal(withoutComments.options.pageNumbers, "none");
+  assert.equal(withoutComments.options.tocPageNumbers, false);
   assert.ok(!JSON.stringify(withoutComments).includes("PRINT_COMMENT_BODY"));
   const withComments = await view(first.id, "document", 200, {
     includeComments: "true",

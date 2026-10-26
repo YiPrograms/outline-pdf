@@ -17,7 +17,7 @@ function fixture(html: string) {
 }
 test("native output is copied without altering its highlighting or source DOM", async () => {
   const { dom, root } = fixture(
-    '<div class="code-block collapsed" data-language="javascript"><code><span class="native-token">const</span> value = 1;</code></div><img class="ProseMirror-separator"><button>Copy</button><div class="mermaid-diagram-wrapper parse-error">Native diagram error</div>',
+    '<div class="code-block collapsed" data-language="javascript"><code><span class="native-token">const</span> value = 1;</code></div><img class="ProseMirror-separator"><button>Copy</button><div class="table-wrapper table-sticky-header table-sticky-column" style="--sticky-scroll-offset:40px"><table><colgroup><col style="width:1200px"></colgroup><tbody><tr><th>Header</th></tr></tbody></table></div><div class="mermaid-diagram-wrapper parse-error">Native diagram error</div>',
   );
   const source = root.outerHTML;
   const languages: string[] = [];
@@ -32,6 +32,16 @@ test("native output is copied without altering its highlighting or source DOM", 
     assert.deepEqual(languages, ["javascript"]);
     assert.equal(root.outerHTML, source);
     assert.equal(copy.className, "native-document");
+    assert.equal(
+      copy.querySelectorAll(".table-sticky-header,.table-sticky-column").length,
+      0,
+    );
+    assert.equal(
+      (
+        copy.querySelector(".table-wrapper") as HTMLElement
+      ).style.getPropertyValue("--sticky-scroll-offset"),
+      "",
+    );
     assert.equal(copy.querySelectorAll(".collapsed").length, 0);
     assert.equal(copy.hasAttribute("aria-hidden"), false);
     assert.equal(

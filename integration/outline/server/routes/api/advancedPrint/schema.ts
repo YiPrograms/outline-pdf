@@ -15,6 +15,8 @@ export const AdvancedPrintSchema = BaseSchema.extend({
       includeToc: flag("true"),
       includeHeadingToc: flag("false"),
       includeComments: flag("false"),
+      pageNumbers: z.enum(["none", "continuous", "document"]).default("none"),
+      tocPageNumbers: flag("false"),
       language: z.enum(["en-US", "zh-TW", "zh-CN"]).default("en-US"),
     })
     .strict(),

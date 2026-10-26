@@ -6,6 +6,8 @@ export interface PrintSettings {
     includeToc: boolean;
     includeHeadingToc: boolean;
     includeComments: boolean;
+    pageNumbers: "none" | "continuous" | "document";
+    tocPageNumbers: boolean;
   };
   language: "en-US" | "zh-TW" | "zh-CN";
 }
