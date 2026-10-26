@@ -1,0 +1,17 @@
+node_modules/
+vendor/
+build/
+output/
+tmp/
+.venv/
+__pycache__/
+*.py[cod]
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+/data/
+/deploy/data/
+/deploy/outline.env

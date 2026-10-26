@@ -1,0 +1,14 @@
+# Maintainers / CI only.
+services:
+  outline:
+    image: ghcr.io/yiprograms/outline-pdf:outline-1.12.0
+    build:
+      context: ..
+      dockerfile: deploy/patch.Dockerfile
+      target: outline
+  outline-print:
+    image: ghcr.io/yiprograms/outline-pdf:patcher-1.12.0
+    build:
+      context: ..
+      dockerfile: deploy/patch.Dockerfile
+      target: patcher

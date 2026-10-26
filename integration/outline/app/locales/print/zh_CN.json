@@ -1,0 +1,19 @@
+{
+  "Print to PDF…": "PDF 打印…",
+  "Print to PDF": "PDF 打印",
+  "Scope": "范围",
+  "Entire collection": "整个文档集",
+  "Current document": "当前文档",
+  "Document tree": "整个文档树",
+  "Cover page": "封面",
+  "Document tree table of contents": "文档树目录",
+  "Document table of contents": "文档目录",
+  "Open print view": "打开打印页面",
+  "Preparing…": "准备中…",
+  "Some documents were excluded.": "已排除部分文档。",
+  "Images unavailable: {{count}}": "图片无法显示：{{count}}",
+  "Diagrams unavailable: {{count}}": "图表无法显示：{{count}}",
+  "Print preparation failed.": "打印内容准备失败。",
+  "Show comments": "显示评论",
+  "Comments": "评论"
+}

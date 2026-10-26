@@ -1,0 +1,19 @@
+{
+  "Print to PDF…": "Print to PDF…",
+  "Print to PDF": "Print to PDF",
+  "Scope": "Scope",
+  "Entire collection": "Entire collection",
+  "Current document": "Current document",
+  "Document tree": "Document tree",
+  "Cover page": "Cover page",
+  "Document tree table of contents": "Document tree table of contents",
+  "Document table of contents": "Document table of contents",
+  "Open print view": "Open print view",
+  "Preparing…": "Preparing…",
+  "Some documents were excluded.": "Some documents were excluded.",
+  "Images unavailable: {{count}}": "Images unavailable: {{count}}",
+  "Diagrams unavailable: {{count}}": "Diagrams unavailable: {{count}}",
+  "Print preparation failed.": "Print preparation failed.",
+  "Show comments": "Show comments",
+  "Comments": "Comments"
+}

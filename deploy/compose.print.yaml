@@ -1,0 +1,18 @@
+# Method B: patch an existing official Outline image at startup.
+services:
+  outline:
+    entrypoint: [sh, /opt/outline-pdf/entrypoint.sh]
+    command: [node, build/server/index.js]
+    environment:
+      ADVANCED_PRINT_ENABLED: "true"
+    volumes:
+      - ./data/outline-print/patches/1.12.0:/opt/outline-pdf:ro
+    depends_on:
+      outline-print: { condition: service_completed_successfully }
+  outline-print:
+    image: ghcr.io/yiprograms/outline-pdf:patcher-1.12.0
+    volumes:
+      - ./data/outline-print/patches/1.12.0:/patches
+    network_mode: none
+    mem_limit: 128m
+    restart: "no"

@@ -1,0 +1,215 @@
+.print-page {
+  min-height: 100vh;
+}
+.print-staging {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  width: min(1100px, 100vw);
+  visibility: hidden;
+  pointer-events: none;
+}
+.native-document .code-block pre {
+  max-height: none !important;
+  overflow: visible !important;
+}
+.pdf-cover {
+  min-height: 230mm;
+  display: flex;
+  align-items: center;
+  font-size: 30pt;
+  font-weight: 700;
+  break-after: page;
+}
+.pdf-toc-title {
+  font-size: 24pt;
+  font-weight: 700;
+  margin-bottom: 12mm;
+}
+.pdf-toc,
+.pdf-document-toc {
+  line-height: 2;
+}
+.pdf-document-toc {
+  margin-bottom: 8mm;
+}
+.pdf-chapter {
+  break-before: page;
+}
+.pdf-chapter > h1 {
+  font-size: 24pt;
+  margin: 0 0 10mm;
+}
+
+pre {
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere;
+}
+pre,
+blockquote,
+.notice-block {
+  break-inside: avoid;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  break-after: avoid;
+}
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+table {
+  max-width: 100%;
+}
+td,
+th {
+  overflow-wrap: anywhere;
+}
+thead {
+  display: table-header-group;
+}
+.table-wrapper,
+.table-scrollable {
+  overflow: visible !important;
+}
+.pdf-toc ol,
+.pdf-document-toc ol {
+  list-style: none;
+  margin: 0;
+  padding-inline-start: 1.25em;
+}
+.pdf-toc > ol,
+.pdf-document-toc > ol {
+  padding-inline-start: 0;
+}
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+  color: #111;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ddd;
+  font:
+    14px system-ui,
+    sans-serif;
+}
+.print-toolbar button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  flex-shrink: 0;
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  background: #0366d6;
+  color: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+  font: inherit;
+  font-weight: 500;
+  line-height: 20px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 150ms;
+}
+.print-toolbar button::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6zM18 12h.01'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.print-toolbar button:hover:not(:disabled) {
+  background: #0257b8;
+}
+.print-toolbar button:active:not(:disabled) {
+  background: #024a9c;
+}
+.print-toolbar button:focus-visible {
+  outline: 2px solid #0366d6;
+  outline-offset: 3px;
+}
+.print-toolbar button:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: wait;
+}
+@media screen {
+  .print-output {
+    max-width: 1100px;
+    margin: auto;
+    padding: 0 24px 40px;
+  }
+  .pdf-chapter,
+  .pdf-toc,
+  .pdf-cover {
+    margin-block: 32px;
+  }
+  [id] {
+    scroll-margin-top: 80px;
+  }
+}
+@media print {
+  .print-toolbar {
+    display: none !important;
+  }
+  .print-output {
+    max-width: none;
+    padding: 0;
+  }
+}
+
+#print-status:empty {
+  display: none;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .print-staging {
+    display: none !important;
+  }
+  .print-page {
+    min-height: 0;
+  }
+}
+
+.pdf-toc a,
+.pdf-document-toc a,
+#print-status a {
+  color: var(--print-link-color);
+}
+
+.print-comments {
+  margin-top: 12mm;
+  border-top: 1px solid #ddd;
+  padding-top: 4mm;
+}
+.print-comment {
+  margin-block: 4mm;
+}
+.print-comment > header {
+  font-size: 0.875em;
+}
+.print-comment .print-comment {
+  margin-inline-start: 6mm;
+  border-inline-start: 1px solid #ddd;
+  padding-inline-start: 4mm;
+}

@@ -1,0 +1,108 @@
+name: Publish images and Compose release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Outline version, e.g. 1.12.0"
+        required: true
+        default: "1.12.0"
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name || inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      packages: write
+    env:
+      IMAGE: ghcr.io/yiprograms/outline-pdf
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Validate release version
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ github.event.release.tag_name || inputs.version }}
+        run: |
+          node --input-type=module <<'JS'
+          import {appendFileSync,readFileSync} from 'node:fs';
+          const version=process.env.REQUESTED_VERSION.replace(/^v/,'');
+          const expected=JSON.parse(readFileSync('versions.json','utf8')).outline.tag.replace(/^v/,'');
+          const metadata=JSON.parse(readFileSync('package.json','utf8'));
+          if(version!==expected || metadata.version!==expected) throw new Error(`Release version must match Outline ${expected}`);
+          appendFileSync(process.env.GITHUB_OUTPUT,`version=${version}\n`);
+          JS
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          npm ci
+          node_modules/.bin/playwright-core install --with-deps chromium
+      - name: Check source
+        run: |
+          npm test
+          npm run typecheck
+          npm run format:check
+      - name: Build and test both source-free deployments
+        run: npm run test:integration
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push both images and record digests
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p output/release
+          for kind in outline patcher; do
+            docker push "$IMAGE:$kind-$VERSION"
+            docker image inspect "$IMAGE:$kind-$VERSION" --format '{{json .RepoDigests}}' > "output/release/$kind-repodigests.json"
+          done
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const digests={};
+          for(const kind of ['outline','patcher']) {
+            const references=JSON.parse(readFileSync(`output/release/${kind}-repodigests.json`,'utf8'));
+            const reference=references.find(value=>value.startsWith(process.env.IMAGE+'@'));
+            if(!reference) throw new Error(`Missing pushed ${kind} digest`);
+            digests[kind]=reference.split('@')[1];
+          }
+          writeFileSync('output/release/digests.json',JSON.stringify(digests,null,2)+'\n');
+          JS
+      - name: Require anonymous image access
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          public_config=$(mktemp -d)
+          trap 'rm -rf "$public_config"' EXIT
+          for kind in outline patcher; do
+            DOCKER_CONFIG="$public_config" docker manifest inspect "$IMAGE:$kind-$VERSION" > /dev/null
+          done
+      - name: Create digest-pinned Compose bundle
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node_modules/.bin/tsx scripts/render-release.ts "$VERSION" "$IMAGE" output/release/digests.json output/release
+          rm output/release/*-repodigests.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: compose-${{ steps.version.outputs.version }}
+          path: output/release/
+      - name: Attach both deployment methods to GitHub release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$RELEASE_TAG" output/release/compose.outline.yaml output/release/compose.print.yaml output/release/images.json output/release/digests.json output/release/release-notes.md --clobber

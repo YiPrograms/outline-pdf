@@ -1,0 +1,11 @@
+{
+  "distribution": {
+    "image": "ghcr.io/yiprograms/outline-pdf",
+    "platforms": ["linux/amd64"]
+  },
+  "outline": {
+    "tag": "v1.12.0",
+    "commit": "09f11188b87b0220fa318dfa6fdd0fa9772195dd",
+    "image": "docker.getoutline.com/outlinewiki/outline@sha256:25d6a2ced2f1f0cf03c09abd776d87ba31941ed96d3a99992aa84b3bd0afc074"
+  }
+}

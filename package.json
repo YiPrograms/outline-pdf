@@ -1,0 +1,36 @@
+{
+  "name": "outline-pdf",
+  "version": "1.12.0",
+  "private": true,
+  "description": "Cross-document browser printing for official Outline containers",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/*.test.ts scripts/*.test.ts integration/runtime/*.test.mjs",
+    "format:check": "prettier --check 'src/**/*.{ts,css}' 'scripts/*.{ts,cjs,mjs}' 'runtime/*.{cjs,mjs}' 'integration/runtime/*.mjs' 'integration/outline/**/*.{ts,tsx,json}' 'fixtures/*.ts' '*.json' '*.md' 'docs/*.md' 'deploy/*.yaml' '.github/workflows/*.yaml'",
+    "test:integration": "sh scripts/test-integration.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@types/jsdom": "21.1.7",
+    "@types/node": "24.0.0",
+    "acorn": "8.15.0",
+    "esbuild": "0.25.10",
+    "jsdom": "22.1.0",
+    "playwright-core": "1.56.1",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YiPrograms/outline-pdf.git"
+  },
+  "homepage": "https://github.com/YiPrograms/outline-pdf",
+  "bugs": {
+    "url": "https://github.com/YiPrograms/outline-pdf/issues"
+  }
+}

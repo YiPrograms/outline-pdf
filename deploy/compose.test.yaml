@@ -1,0 +1,48 @@
+# Isolated integration-test database and application. Not a production deployment.
+name: outline-pdf-test
+services:
+  outline:
+    image: docker.getoutline.com/outlinewiki/outline@sha256:25d6a2ced2f1f0cf03c09abd776d87ba31941ed96d3a99992aa84b3bd0afc074
+    restart: unless-stopped
+    ports: ["${BIND_ADDRESS:-127.0.0.1}:${PORT:-3000}:3000"]
+    environment:
+      NODE_ENV: production
+      URL: ${URL:?Configure the public Outline URL}
+      SECRET_KEY: ${SECRET_KEY:?Missing SECRET_KEY}
+      UTILS_SECRET: ${UTILS_SECRET:?Missing UTILS_SECRET}
+      DATABASE_URL: postgres://outline:${POSTGRES_PASSWORD:?Missing database password}@postgres:5432/outline
+      PGSSLMODE: disable
+      REDIS_URL: redis://redis:6379
+      FILE_STORAGE: local
+      FILE_STORAGE_LOCAL_ROOT_DIR: /var/lib/outline/data
+      FORCE_HTTPS: ${FORCE_HTTPS:-true}
+      WEB_CONCURRENCY: "1"
+    volumes: [outline-data:/var/lib/outline/data]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+  postgres:
+    image: postgres@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    environment:
+      POSTGRES_USER: outline
+      POSTGRES_DB: outline
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Missing database password}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U outline -d outline"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    command: [redis-server, --appendonly, "yes", --appendfsync, everysec]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  outline-data:
+  postgres-data:
+  redis-data:

@@ -1,0 +1,6 @@
+# Method A: run Outline with PDF printing patched at image build time.
+services:
+  outline:
+    image: ghcr.io/yiprograms/outline-pdf:outline-1.12.0
+    environment:
+      ADVANCED_PRINT_ENABLED: "true"

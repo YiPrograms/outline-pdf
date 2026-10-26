@@ -1,0 +1,19 @@
+{
+  "Print to PDF…": "PDF 列印…",
+  "Print to PDF": "PDF 列印",
+  "Scope": "範圍",
+  "Entire collection": "整個文件集",
+  "Current document": "目前文件",
+  "Document tree": "整個文件樹",
+  "Cover page": "封面",
+  "Document tree table of contents": "文件樹目錄",
+  "Document table of contents": "文件目錄",
+  "Open print view": "開啟列印頁",
+  "Preparing…": "準備中…",
+  "Some documents were excluded.": "已排除部分文件。",
+  "Images unavailable: {{count}}": "圖片無法顯示：{{count}}",
+  "Diagrams unavailable: {{count}}": "圖表無法顯示：{{count}}",
+  "Print preparation failed.": "列印內容準備失敗。",
+  "Show comments": "顯示留言",
+  "Comments": "留言"
+}
