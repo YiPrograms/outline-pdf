@@ -103,7 +103,7 @@ thead {
     14px system-ui,
     sans-serif;
 }
-.print-toolbar button {
+#print-button {
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
@@ -123,7 +123,7 @@ thead {
   cursor: pointer;
   transition: background 150ms;
 }
-.print-toolbar button::before {
+#print-button::before {
   content: "";
   width: 18px;
   height: 18px;
@@ -132,17 +132,17 @@ thead {
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6zM18 12h.01'/%3E%3C/svg%3E")
     center / contain no-repeat;
 }
-.print-toolbar button:hover:not(:disabled) {
+#print-button:hover:not(:disabled) {
   background: #0257b8;
 }
-.print-toolbar button:active:not(:disabled) {
+#print-button:active:not(:disabled) {
   background: #024a9c;
 }
-.print-toolbar button:focus-visible {
+#print-button:focus-visible {
   outline: 2px solid #0366d6;
   outline-offset: 3px;
 }
-.print-toolbar button:disabled {
+#print-button:disabled {
   opacity: 0.5;
   box-shadow: none;
   cursor: wait;
@@ -246,28 +246,114 @@ thead {
   }
 }
 
-.print-layout-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+/* Settings stay beside the preview and never enter the printed document. */
+.print-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
 }
-.print-layout-controls label {
+.print-settings {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 62px;
+  max-height: calc(100vh - 62px);
+  overflow: auto;
+  padding: 20px;
+  border-inline-start: 1px solid #ddd;
+  background: white;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+}
+.print-settings summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.print-settings-body {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 20px;
+}
+.print-settings fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.print-settings legend {
+  padding: 0;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.print-radio-group:disabled {
+  opacity: 0.65;
+}
+.print-field {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
 }
-.print-layout-controls input,
-.print-layout-controls select {
+.print-field input,
+.print-field select {
+  width: 100%;
+  min-height: 34px;
   color: #111;
   background: white;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 4px;
+  border-radius: 6px;
+  padding: 6px 8px;
   font: inherit;
 }
-.print-layout-controls input {
-  width: 64px;
+.print-layout-note {
+  margin: 0;
+  color: #555;
+  font-size: 12px;
+}
+.print-preview {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+@media screen {
+  .print-preview {
+    overflow-x: auto;
+  }
+}
+@media screen and (max-width: 999px) {
+  .print-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .print-settings {
+    grid-column: 1;
+    grid-row: 1;
+    position: static;
+    max-height: none;
+    border-inline-start: 0;
+    border-bottom: 1px solid #ddd;
+  }
+  .print-preview {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .print-settings-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+@media print {
+  .print-settings {
+    display: none !important;
+  }
+  .print-workspace,
+  .print-preview {
+    display: block;
+    overflow: visible;
+  }
 }
 .print-output.paginated {
   max-width: none;

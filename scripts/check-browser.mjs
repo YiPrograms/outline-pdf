@@ -72,6 +72,10 @@ try {
       .getByRole("button", { name: "Open print view", exact: true })
       .waitFor();
   };
+  const chooseRadio = async (radio) => {
+    await radio.locator("..").click();
+    assert.equal(await radio.isChecked(), true);
+  };
   const openView = async (
     buttonName = "Open print view",
     printName = "Print to PDF",
@@ -113,16 +117,20 @@ try {
     0,
   );
   const singleView = await openView();
+  assert.equal(await page.getByRole("switch").count(), 0);
   assert.equal(
-    new URL(singleView.url()).searchParams.get("includeToc"),
-    "false",
+    await singleView.locator(".print-settings").getAttribute("open"),
+    "",
   );
   assert.equal(await singleView.locator(".pdf-toc").count(), 0);
   assert.equal(await singleView.locator(".print-comments").count(), 0);
-  await page
+  await singleView
     .getByRole("switch", { name: "Show comments", exact: true })
     .check();
-  const commentView = await openView();
+  const commentView = singleView;
+  await commentView.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
   assert.equal(await commentView.locator(".print-comment").count(), 2);
   assert.equal(
     await commentView.locator(".print-comment .print-comment").count(),
@@ -157,20 +165,29 @@ try {
   });
   assert.ok(commentsText.includes("PRINT_COMMENT_BODY"));
   assert.ok(commentsText.includes("PRINT_COMMENT_REPLY"));
-  await commentView.close();
-  await page
+  await commentView
     .getByRole("switch", { name: "Show comments", exact: true })
     .uncheck();
+  await commentView.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
+  assert.equal(await commentView.locator(".print-comments").count(), 0);
   await singleView.close();
   await page.screenshot({
     path: path.join(output, "print-dialog-document.png"),
   });
-  await documentTree.check();
-  const documentContents = page.getByRole("switch", {
+  await chooseRadio(documentTree);
+  const treeView = await openView();
+  let snapshotRequests = 0;
+  treeView.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/advancedPrint.info")
+      snapshotRequests++;
+  });
+  const documentContents = treeView.getByRole("switch", {
     name: "Document tree table of contents",
     exact: true,
   });
-  const headingContents = page.getByRole("switch", {
+  const headingContents = treeView.getByRole("switch", {
     name: "Document table of contents",
     exact: true,
   });
@@ -186,7 +203,6 @@ try {
       .every((value) => Number(value) > 180),
     `Source page uses dark mode: ${parentTheme}`,
   );
-  const treeView = await openView();
   assert.equal(
     await treeView
       .locator(".print-page")
@@ -274,7 +290,13 @@ try {
     { encoding: "utf8" },
   );
   assert.match(letterInfo, /Page size:\s+792(?:\.0+)? x 612(?:\.0+)?/);
-  await treeView.close();
+  await treeView.emulateMedia({ media: null });
+  const sidebar = await treeView.locator(".print-settings").boundingBox();
+  const preview = await treeView.locator(".print-preview").boundingBox();
+  assert.ok(
+    sidebar.x >= preview.x + preview.width - 1,
+    "Settings sidebar sits to the right of the preview",
+  );
   for (const [documents, headings] of [
     [true, true],
     [false, true],
@@ -282,7 +304,10 @@ try {
   ]) {
     await documentContents.setChecked(documents);
     await headingContents.setChecked(headings);
-    const view = await openView();
+    const view = treeView;
+    await view.waitForFunction(
+      () => !document.getElementById("print-button").disabled,
+    );
     assert.equal(
       new URL(view.url()).searchParams.get("includeToc"),
       String(documents),
@@ -321,15 +346,38 @@ try {
         "Contents links must stay inside the PDF",
       );
     }
-    await view.close();
   }
-  await currentDocument.check();
-  assert.equal(await documentContents.count(), 0);
-  await documentTree.check();
+  const cover = treeView.getByRole("switch", {
+    name: "Cover page",
+    exact: true,
+  });
+  assert.equal(
+    await cover.evaluate((element) => element.tagName),
+    "BUTTON",
+    "Outline's native switch is used",
+  );
+  await cover.check();
+  await treeView.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
+  assert.equal(await treeView.locator(".pdf-cover").count(), 1);
+  await cover.uncheck();
+  await treeView.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
+  assert.equal(await treeView.locator(".pdf-cover").count(), 0);
+  assert.equal(
+    snapshotRequests,
+    0,
+    "Content settings reuse the rendered snapshot",
+  );
+  await chooseRadio(currentDocument);
+  assert.equal(await page.getByRole("switch").count(), 0);
+  await chooseRadio(documentTree);
   assert.equal(await documentContents.isChecked(), false);
   await documentContents.check();
 
-  const showNumbers = page.getByRole("switch", {
+  const showNumbers = treeView.getByRole("switch", {
     name: "Show page numbers",
     exact: true,
   });
@@ -340,7 +388,10 @@ try {
       .split("\f")
       .filter((text) => text.trim())
       .map((text) => text.trim().split("\n").at(-1).trim());
-  const continuous = await openView();
+  const continuous = treeView;
+  await continuous.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
   const continuousPdf = path.join(output, "page-numbers-continuous.pdf");
   await continuous.pdf({
     path: continuousPdf,
@@ -354,11 +405,16 @@ try {
     sequential,
     sequential.map((_, index) => String(index + 1)),
   );
-  await continuous.close();
-  await page
-    .getByRole("radio", { name: "Per-document page numbers", exact: true })
-    .check();
-  const perDocument = await openView();
+  await chooseRadio(
+    treeView.getByRole("radio", {
+      name: "Per-document page numbers",
+      exact: true,
+    }),
+  );
+  const perDocument = treeView;
+  await perDocument.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
   const documentPdf = path.join(output, "page-numbers-document.pdf");
   await perDocument.pdf({
     path: documentPdf,
@@ -466,14 +522,19 @@ try {
     }
   };
   await checkNumberPositions(perDocument, false);
-  await perDocument.close();
-  const tocNumbers = page.getByRole("switch", {
+  await perDocument
+    .getByLabel("Page number position", { exact: true })
+    .selectOption("bottom-center");
+  const tocNumbers = treeView.getByRole("switch", {
     name: "Page numbers in table of contents",
     exact: true,
   });
   await headingContents.check();
   await tocNumbers.check();
-  const numbered = await openView();
+  const numbered = treeView;
+  await numbered.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
   const checkPreview = async (filename, expectedSize) => {
     const labels = await numbered
       .locator(".pagedjs_margin-bottom-center .pagedjs_margin-content")
@@ -569,7 +630,17 @@ try {
   await mobile.waitForFunction(
     () => document.getElementById("print-button")?.disabled === false,
   );
+  assert.equal(
+    await mobile.locator(".print-settings").getAttribute("open"),
+    null,
+  );
+  await mobile.getByText("Print settings", { exact: true }).click();
+  await mobile
+    .getByRole("switch", { name: "Show page numbers", exact: true })
+    .waitFor();
+  await mobile.screenshot({ path: path.join(output, "mobile-settings.png") });
   await mobile.emulateMedia({ media: "print" });
+  assert.equal(await mobile.locator(".print-settings").isVisible(), false);
   assert.ok((await mobile.locator("#root :has(.print-page)").count()) > 0);
   for (const ancestor of await mobile
     .locator("html, body, #root, #root :has(.print-page)")
@@ -598,9 +669,12 @@ try {
   );
   await mobile.screenshot({ path: path.join(output, "mobile-print.png") });
   await mobileContext.close();
+  assert.equal(
+    snapshotRequests,
+    0,
+    "Page settings reuse the rendered snapshot",
+  );
   await numbered.close();
-  await tocNumbers.uncheck();
-  await showNumbers.uncheck();
 
   const language = (lng) =>
     page.evaluate(
@@ -623,9 +697,16 @@ try {
 
   await language("zh-TW");
   await page.getByRole("dialog", { name: "PDF 列印", exact: true }).waitFor();
-  await page.getByRole("switch", { name: "文件樹目錄", exact: true }).waitFor();
-  await page.getByRole("switch", { name: "文件目錄", exact: true }).waitFor();
   const translated = await openView("開啟列印頁", "PDF 列印");
+  await translated
+    .getByRole("switch", { name: "文件樹目錄", exact: true })
+    .waitFor();
+  await translated
+    .getByRole("switch", { name: "文件目錄", exact: true })
+    .waitFor();
+  await translated.screenshot({
+    path: path.join(output, "print-settings-zh-TW.png"),
+  });
   assert.equal(new URL(translated.url()).searchParams.get("language"), "zh-TW");
   await translated.close();
   await page.screenshot({
@@ -710,8 +791,9 @@ try {
       .isChecked(),
     true,
   );
+  const collectionView = await openView();
   assert.equal(
-    await page
+    await collectionView
       .getByRole("switch", {
         name: "Document tree table of contents",
         exact: true,
@@ -719,7 +801,6 @@ try {
       .isChecked(),
     true,
   );
-  const collectionView = await openView();
   assert.equal(await collectionView.locator(".pdf-chapter").count(), 10);
   const depth = await collectionView.evaluate(() =>
     Math.max(
@@ -771,6 +852,18 @@ try {
       .evaluate((image) => image.naturalWidth),
     300,
   );
+  await diagram
+    .getByRole("switch", { name: "Cover page", exact: true })
+    .check();
+  await diagram.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
+  await diagram
+    .getByRole("switch", { name: "Cover page", exact: true })
+    .uncheck();
+  await diagram.waitForFunction(
+    () => !document.getElementById("print-button").disabled,
+  );
   await diagram.screenshot({
     path: path.join(output, "drawio-print-view.png"),
   });
@@ -797,6 +890,9 @@ try {
     nativePrintAction: true,
     nativeWebEditor: true,
     mobilePrint: true,
+    rightSettingsSidebar: true,
+    nativePrintControls: true,
+    livePreviewOptions: true,
     nativePageNumbers: true,
     perDocumentPageNumbers: true,
     pageNumberPositions: positions,

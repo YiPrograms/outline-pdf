@@ -67,13 +67,11 @@ await fs.copyFile(
   "integration/runtime/entrypoint.sh",
   path.join(output, "entrypoint.sh"),
 );
-const component = await fs.readFile(
-  "integration/outline/app/components/AdvancedPrintDialog.tsx",
-  "utf8",
-);
-const source =
-  'export {AdvancedPrintView} from "./AdvancedPrintView";\nimport {React,styled,Button} from "./outline-pdf-bridge.js";\nimport {usePrintTranslation} from "../utils/printI18n";\nexport {React,env,Button} from "./outline-pdf-bridge.js";\nconst {useState}=React;\n' +
-  component.slice(component.indexOf("interface Props"));
+const source = `
+export {AdvancedPrintDialog,PrintText} from "./AdvancedPrintDialog";
+export {AdvancedPrintView} from "./AdvancedPrintView";
+export {React,env,Button} from "./outline-pdf-bridge.js";
+`;
 await build({
   stdin: {
     contents: source,

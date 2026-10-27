@@ -1,7 +1,6 @@
-import { useState } from "react";
-import styled from "styled-components";
-import Button from "~/components/Button";
-import { usePrintTranslation } from "~/utils/printI18n";
+import { React, styled, Button } from "./outline-pdf-bridge.js";
+import { usePrintTranslation } from "../utils/printI18n";
+import { PrintRadioGroup } from "./PrintSettings";
 
 interface Props {
   sourceId: string;
@@ -10,133 +9,31 @@ interface Props {
 
 export function AdvancedPrintDialog({ sourceId, collection = false }: Props) {
   const { t, language } = usePrintTranslation();
-  const [scope, setScope] = useState(collection ? "collection" : "document");
-  const [includeCover, setIncludeCover] = useState(false);
-  const [includeToc, setIncludeToc] = useState(true);
-  const [includeHeadingToc, setIncludeHeadingToc] = useState(false);
-  const [includeComments, setIncludeComments] = useState(false);
-  const [showPageNumbers, setShowPageNumbers] = useState(false);
-  const [pageNumbers, setPageNumbers] = useState("continuous");
-  const [tocPageNumbers, setTocPageNumbers] = useState(false);
-  const hasToc = (scope !== "document" && includeToc) || includeHeadingToc;
-  const open = () => {
-    const query = new URLSearchParams({
-      sourceId,
-      scope,
-      includeCover: String(includeCover),
-      includeToc: String(scope !== "document" && includeToc),
-      includeHeadingToc: String(includeHeadingToc),
-      includeComments: String(includeComments),
-      pageNumbers: showPageNumbers ? pageNumbers : "none",
-      tocPageNumbers: String(showPageNumbers && hasToc && tocPageNumbers),
-      language,
-    });
-    window.open(`/print?${query}`, "_blank", "noopener,noreferrer");
-  };
+  const [scope, setScope] = React.useState(
+    collection ? "collection" : "document",
+  );
   return (
     <Layout>
-      <Scope>
-        <legend>{t("Scope")}</legend>
-        {(collection
-          ? [["collection", "Entire collection"]]
-          : [
-              ["document", "Current document"],
-              ["document-tree", "Document tree"],
-            ]
-        ).map(([value, label]) => (
-          <label key={value}>
-            <input
-              type="radio"
-              name="print-scope"
-              value={value}
-              checked={scope === value}
-              onChange={(event) => setScope(event.target.value)}
-            />
-            {t(label)}
-          </label>
-        ))}
-      </Scope>
-      <Setting>
-        {t("Cover page")}
-        <Toggle
-          type="checkbox"
-          role="switch"
-          checked={includeCover}
-          onChange={(event) => setIncludeCover(event.target.checked)}
-        />
-      </Setting>
-      {scope !== "document" && (
-        <Setting>
-          {t("Document tree table of contents")}
-          <Toggle
-            type="checkbox"
-            role="switch"
-            checked={includeToc}
-            onChange={(event) => setIncludeToc(event.target.checked)}
-          />
-        </Setting>
-      )}
-      <Setting>
-        {t("Document table of contents")}
-        <Toggle
-          type="checkbox"
-          role="switch"
-          checked={includeHeadingToc}
-          onChange={(event) => setIncludeHeadingToc(event.target.checked)}
-        />
-      </Setting>
-      <Setting>
-        {t("Show comments")}
-        <Toggle
-          type="checkbox"
-          role="switch"
-          checked={includeComments}
-          onChange={(event) => setIncludeComments(event.target.checked)}
-        />
-      </Setting>
-      <Setting>
-        {t("Show page numbers")}
-        <Toggle
-          type="checkbox"
-          role="switch"
-          checked={showPageNumbers}
-          onChange={(event) => setShowPageNumbers(event.target.checked)}
-        />
-      </Setting>
-      {showPageNumbers && (
-        <>
-          <Scope>
-            <legend>{t("Page numbering")}</legend>
-            {[
-              ["continuous", "Continuous page numbers"],
-              ["document", "Per-document page numbers"],
-            ].map(([value, label]) => (
-              <label key={value}>
-                <input
-                  type="radio"
-                  name="print-page-numbers"
-                  value={value}
-                  checked={pageNumbers === value}
-                  onChange={(event) => setPageNumbers(event.target.value)}
-                />
-                {t(label)}
-              </label>
-            ))}
-          </Scope>
-          {hasToc && (
-            <Setting>
-              {t("Page numbers in table of contents")}
-              <Toggle
-                type="checkbox"
-                role="switch"
-                checked={tocPageNumbers}
-                onChange={(event) => setTocPageNumbers(event.target.checked)}
-              />
-            </Setting>
-          )}
-        </>
-      )}
-      <Button type="button" onClick={open}>
+      <PrintRadioGroup
+        label={t("Scope")}
+        value={scope}
+        choices={
+          collection
+            ? [["collection", t("Entire collection")]]
+            : [
+                ["document", t("Current document")],
+                ["document-tree", t("Document tree")],
+              ]
+        }
+        onChange={setScope}
+      />
+      <Button
+        type="button"
+        onClick={() => {
+          const query = new URLSearchParams({ sourceId, scope, language });
+          window.open(`/print?${query}`, "_blank", "noopener,noreferrer");
+        }}
+      >
         {t("Open print view")}
       </Button>
     </Layout>
@@ -150,69 +47,14 @@ const Layout = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
-`;
-const Scope = styled.fieldset`
-  border: 0;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  legend {
-    padding: 0;
-    margin-bottom: 12px;
-    font-weight: 500;
-  }
-  label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-  }
-  input {
+  fieldset {
+    border: 0;
     margin: 0;
-    width: 16px;
-    height: 16px;
-    accent-color: ${(props) => props.theme.accent};
+    padding: 0;
   }
-`;
-const Setting = styled.label`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 28px;
-  cursor: pointer;
-`;
-const Toggle = styled.input`
-  appearance: none;
-  width: 32px;
-  height: 18px;
-  flex-shrink: 0;
-  margin: 0;
-  padding: 3px;
-  border: 0;
-  border-radius: 18px;
-  background: ${(props) => props.theme.slate};
-  cursor: pointer;
-  transition: background 150ms;
-  &::before {
-    content: "";
-    display: block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: white;
-    transition: transform 150ms;
-  }
-  &:checked {
-    background: ${(props) => props.theme.accent};
-  }
-  &:checked::before {
-    transform: translateX(14px);
-  }
-  &:focus-visible {
-    outline: 2px solid ${(props) => props.theme.accent};
-    outline-offset: 3px;
+  legend {
+    margin-bottom: 12px;
+    padding: 0;
+    font-weight: 500;
   }
 `;

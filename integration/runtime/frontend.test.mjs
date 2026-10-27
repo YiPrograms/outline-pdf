@@ -10,7 +10,7 @@ const fixture = () =>
     ],
     [
       "ExportDialog.bbb.js",
-      'import {interop,nativeReact,styled,useStores,Text,useTranslation} from "./native.abc.js";const React=interop(nativeReact());const HR=styled.hr`margin:1px`;const Dialog=observer(({collection,onSubmit})=>{const [format,setFormat]=React.useState("markdown");const {collections,ui}=useStores();const {t}=useTranslation();return jsx(Confirm,{children:[collection&&jsx(Text,{as:"p",children:"Exporting the collection may take some time."})]})});export {Dialog};',
+      'import {interop,nativeReact,styled,useStores,Text,useTranslation} from "./native.abc.js";const React=interop(nativeReact());const HR=styled.hr`margin:1px`;function Selector({formats,value,onChange}){return jsx("input",{type:"radio"})}const Dialog=observer(({collection,onSubmit})=>{const [format,setFormat]=React.useState("markdown");const {collections,ui}=useStores();const {t}=useTranslation();return jsx(Confirm,{children:[collection&&jsx(Text,{as:"p",children:"Exporting the collection may take some time."})]})});export {Dialog};',
     ],
     [
       "Button.ccc.js",
@@ -36,6 +36,10 @@ const fixture = () =>
       "nodes.hhh.js",
       'const withComments=nodes=>[Mention,Comment,...nodes.filter(node=>node!==Mention)];export{withComments as c};async function loadLanguage(language){console.error("Failed to load language",language)}',
     ],
+    [
+      "Switch.iii.js",
+      "function Switch(props){return null}export {Switch as t};",
+    ],
     ["native.abc.js", 'export const untouched="original";'],
   ]);
 
@@ -50,6 +54,8 @@ test("frontend patch connects native print rendering and fingerprints importing 
   assert.deepEqual([...assets], before);
   const bridge = result.files.get("app/assets/outline-pdf-bridge-testpatch.js");
   assert.ok(bridge.includes("as NativeEditor"));
+  assert.ok(bridge.includes("as Switch"));
+  assert.ok(bridge.includes("as RadioGroup"));
   assert.ok(bridge.includes("as ThemeProvider"));
   assert.ok(bridge.includes("as loadCodeLanguage"));
   assert.ok(

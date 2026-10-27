@@ -30,6 +30,8 @@ The page renders each document with Outline's native read-only Editor under a li
 
 Rendered DOM is detached from the editor for print-only layout and anchor changes. The page combines documents, namespaces IDs including repeated SVG diagrams, rewrites links within the selected scope, and adds the requested tables of contents. Native styles remain in the page; the extension supplies only print layout and controls. Failed native assets remain visible and have linked warning counts.
 
-Page footers use native CSS page-margin counters. Numbered tables of contents use Paged.js to paginate the detached DOM with the selected paper size and margins. Page labels and contents references come from that completed layout. The native editor still renders the document content.
+The right settings sidebar uses Outline’s native switches and radio selector. Layout changes reuse copies of the rendered DOM; changing comments fetches a new authorized snapshot. The sidebar collapses above the preview on smaller screens.
+
+Page labels use native CSS page-margin counters. Numbered tables of contents use Paged.js to paginate the detached DOM with the selected paper size and margins. Page labels and contents references come from that completed layout. The native editor still renders the document content.
 
 The browser prints or saves the result as PDF; the application creates no stored PDF artifacts.

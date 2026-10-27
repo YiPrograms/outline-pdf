@@ -92,12 +92,7 @@ export async function prepareNative(
       ),
     );
     options.signal.throwIfAborted();
-    const copy = root.cloneNode(true) as HTMLElement;
-    const canvases = [...copy.querySelectorAll("canvas")];
-    [...root.querySelectorAll("canvas")].forEach((canvas, index) => {
-      if (canvas.width && canvas.height)
-        canvases[index]?.getContext("2d")?.drawImage(canvas, 0, 0);
-    });
+    const copy = cloneNative(root);
     [...root.querySelectorAll("table")].forEach((table, index) => {
       const columns = [
         ...table.querySelectorAll<HTMLTableColElement>(
@@ -158,4 +153,15 @@ export async function prepareNative(
   } finally {
     observer.disconnect();
   }
+}
+
+/** Clone rendered native content while retaining canvas pixels. */
+export function cloneNative(root: HTMLElement) {
+  const copy = root.cloneNode(true) as HTMLElement;
+  const canvases = [...copy.querySelectorAll("canvas")];
+  [...root.querySelectorAll("canvas")].forEach((canvas, index) => {
+    if (canvas.width && canvas.height)
+      canvases[index]?.getContext("2d")?.drawImage(canvas, 0, 0);
+  });
+  return copy;
 }

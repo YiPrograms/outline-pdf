@@ -213,6 +213,27 @@ export function planFrontend(assets, widget, id) {
       ast: parse(code, { ecmaVersion: "latest", sourceType: "module" }),
     };
   };
+  const switchAsset = nativeAsset("Switch");
+  const switchExport = one(
+    switchAsset.ast.body
+      .filter((n) => n.type === "ExportNamedDeclaration")
+      .flatMap((n) => n.specifiers),
+    "native Switch export",
+  );
+  const radioSelector = one(
+    ea.body.filter(
+      (n) =>
+        n.type === "FunctionDeclaration" &&
+        nodes(
+          n,
+          (p) =>
+            p.type === "Property" &&
+            key(p.key) === "type" &&
+            literal(p.value) === "radio",
+        ).length,
+    ),
+    "native radio selector",
+  );
   const presentation = nativeAsset("PresentationMode");
   const editorCall = one(
     nodes(
@@ -322,6 +343,7 @@ export function planFrontend(assets, widget, id) {
   );
   const bridgeName = `outline-pdf-bridge-${id}.js`,
     widgetName = `outline-pdf-widget-${id}.js`;
+  // The selector lives in ExportDialog, which imports the widget; load it lazily.
   const bridge =
     ea.body
       .filter((n) => n.type === "ImportDeclaration")
@@ -337,7 +359,11 @@ export function planFrontend(assets, widget, id) {
     imported(themeProviderBinding, "__pdfThemeProvider") +
     `import {${themeExport.exported.name} as __pdfUseBuildTheme} from ${JSON.stringify("./" + themeAsset.name)};\n` +
     `import {${buttonExport.exported.name} as __pdfButton} from ${JSON.stringify("./" + buttonFile)};\n` +
-    `const __pdfReact=${text(exp, reactInit)};\nexport {__pdfReact as React, ${styleTag} as styled, __pdfEnv as env, __pdfButton as Button, __pdfUseTranslation as useTranslation, __pdfLoadCodeLanguage as loadCodeLanguage, __pdfEditor as NativeEditor, __pdfExtensions as nativeExtensions, __pdfThemeProvider as ThemeProvider, __pdfUseBuildTheme as useBuildTheme};`;
+    imported(
+      { name: switchExport.exported.name, from: "./" + switchAsset.name },
+      "__pdfSwitch",
+    ) +
+    `const __pdfReact=${text(exp, reactInit)};\nconst __pdfRadioGroup=__pdfReact.lazy(()=>import(${JSON.stringify("./" + exportFile)}).then(m=>({default:m.__outlinePdfRadioGroup})));\nexport {__pdfSwitch as Switch,__pdfRadioGroup as RadioGroup,__pdfReact as React, ${styleTag} as styled, __pdfEnv as env, __pdfButton as Button, __pdfUseTranslation as useTranslation, __pdfLoadCodeLanguage as loadCodeLanguage, __pdfEditor as NativeEditor, __pdfExtensions as nativeExtensions, __pdfThemeProvider as ThemeProvider, __pdfUseBuildTheme as useBuildTheme};`;
   const addonImport = `import {AdvancedPrintDialog as __OutlinePdfDialog,PrintText as __OutlinePdfText,React as __OutlinePdfReact,env as __OutlinePdfEnv,Button as __OutlinePdfButton} from "./${widgetName}";\n`;
   const nameProperty = one(
     action.properties.filter((p) => key(p.key) === "name"),
@@ -371,6 +397,11 @@ export function planFrontend(assets, widget, id) {
     "collection dialog children",
   );
   const expChanges = [
+    [
+      exp.length,
+      exp.length,
+      `\nexport {${radioSelector.id.name} as __outlinePdfRadioGroup};`,
+    ],
     [0, 0, addonImport],
     [
       component.body.start + 1,
