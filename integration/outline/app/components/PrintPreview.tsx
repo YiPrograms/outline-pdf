@@ -5,8 +5,10 @@ import {
   loadCodeLanguage,
 } from "./outline-pdf-bridge.js";
 import { prepareNative, cloneNative } from "../../../../src/prepareNative";
+import { orderDocuments } from "../../../../src/documentSelection";
 import { composeDocuments } from "../../../../src/composeDocuments";
 import type {
+  SourceDocument,
   PrintSnapshot,
   RenderedDocument,
   PrintComment,
@@ -17,6 +19,7 @@ import type { PageLayout } from "../../../../src/paginate";
 import type { PageNumberPosition } from "../../../../src/pageNumbers";
 
 export interface PrintStatus {
+  empty?: boolean;
   ready: boolean;
   error: boolean;
   issues: { kind: string; id: string; count: number }[];
@@ -25,6 +28,9 @@ export interface PrintStatus {
 
 export function PrintPreview({
   query,
+  selectedIds,
+  order,
+  onDocuments,
   options,
   layout,
   position,
@@ -32,6 +38,9 @@ export function PrintPreview({
   commentsLabel,
 }: {
   query: string;
+  selectedIds: ReadonlySet<string>;
+  order: string[];
+  onDocuments: (documents: SourceDocument[]) => void;
   options: PrintSnapshot["options"];
   layout: PageLayout;
   position: PageNumberPosition;
@@ -64,6 +73,7 @@ export function PrintPreview({
         if (!controller.signal.aborted) {
           deadline.current = Date.now() + data.timeoutMs;
           setSnapshot(data);
+          onDocuments(data.documents);
         }
       })
       .catch(() => {
@@ -73,7 +83,7 @@ export function PrintPreview({
         }
       });
     return () => controller.abort();
-  }, [query, onStatus]);
+  }, [query, onStatus, onDocuments]);
   React.useEffect(() => {
     if (!snapshot || !staging.current) return;
     const source = snapshot.documents[index];
@@ -115,10 +125,23 @@ export function PrintPreview({
         issues: [],
         excluded: snapshot.excludedBranches,
       });
+      if (!snapshot.documents.some((item) => selectedIds.has(item.id))) {
+        output.current!.replaceChildren();
+        setNumberCss("");
+        onStatus({
+          ready: false,
+          empty: true,
+          error: false,
+          issues: [],
+          excluded: snapshot.excludedBranches,
+        });
+        return;
+      }
       const fragment = composeDocuments(document, {
         ...snapshot,
         options,
-        documents: rendered.current.map((source) => ({
+        selectedIds,
+        documents: orderDocuments(rendered.current, order).map((source) => ({
           ...source,
           element: cloneNative(source.element),
         })),
@@ -177,7 +200,17 @@ export function PrintPreview({
       controller.abort();
       cleanup?.();
     };
-  }, [contentReady, snapshot, options, layout, position, paginated, onStatus]);
+  }, [
+    contentReady,
+    snapshot,
+    options,
+    layout,
+    position,
+    paginated,
+    onStatus,
+    selectedIds,
+    order,
+  ]);
   const source = snapshot?.documents[index];
   return (
     <>

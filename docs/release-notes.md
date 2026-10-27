@@ -1,6 +1,6 @@
 # Outline PDF Print {{version}}
 
-Print documents, document trees, and collections using Outline’s native rendering. Includes linked tables of contents, adjustable page number placement, optional comments, and a light print view. Numbered tables of contents provide paper and margin controls in the preview.
+Print documents, document trees, and collections using Outline’s native rendering. Select and reorder documents in the print sidebar. Includes linked tables of contents, adjustable page number placement, optional comments, and a light print view. Numbered tables of contents provide paper and margin controls in the preview.
 
 Supports **Outline {{version}} on Linux x86-64**.
 

@@ -1,3 +1,4 @@
+import { checkDocumentSelection } from "./check-document-selection.mjs";
 import { chromium, devices } from "playwright-core";
 import fs from "node:fs";
 import path from "node:path";
@@ -815,6 +816,7 @@ try {
   await collectionView.screenshot({
     path: path.join(output, "collection-print-view.png"),
   });
+  await checkDocumentSelection(collectionView, browser, context, output);
   await collectionView.close();
   const broken = await context.newPage();
   await broken.goto(
@@ -893,6 +895,10 @@ try {
     rightSettingsSidebar: true,
     nativePrintControls: true,
     livePreviewOptions: true,
+    independentDocumentSelection: true,
+    subtreeSelection: true,
+    pointerKeyboardAndTouchReorder: true,
+    selectedDocumentPageNumbers: true,
     nativePageNumbers: true,
     perDocumentPageNumbers: true,
     pageNumberPositions: positions,

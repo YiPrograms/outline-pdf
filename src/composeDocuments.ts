@@ -6,6 +6,7 @@ export function composeDocuments(
   input: {
     title: string;
     documents: RenderedDocument[];
+    selectedIds?: ReadonlySet<string>;
     options: {
       includeToc: boolean;
       includeHeadingToc: boolean;
@@ -20,14 +21,17 @@ export function composeDocuments(
     string,
     { section: HTMLElement; fragments: Map<string, string> }
   >();
+  const seen = new Set<string>();
   doc.title = input.title;
   for (const source of input.documents) {
     if (
       !/^[a-zA-Z0-9-]+$/.test(source.id) ||
-      chapters.has(source.id) ||
-      (source.parentId && !chapters.has(source.parentId))
+      seen.has(source.id) ||
+      (source.parentId && !seen.has(source.parentId))
     )
       throw new Error("Invalid document hierarchy");
+    seen.add(source.id);
+    if (input.selectedIds && !input.selectedIds.has(source.id)) continue;
     const sourceUrl = new URL(source.sourceUrl);
     if (!/^https?:$/.test(sourceUrl.protocol))
       throw new Error("Invalid document URL");
@@ -52,7 +56,8 @@ export function composeDocuments(
     output.append(section);
   }
   for (const source of input.documents) {
-    const chapter = chapters.get(source.id)!;
+    const chapter = chapters.get(source.id);
+    if (!chapter) continue;
     for (const link of chapter.section.querySelectorAll("a[href]")) {
       const href = link.getAttribute("href") ?? "";
       let url: URL;
@@ -88,7 +93,8 @@ export function composeDocuments(
   }
   if (input.options.includeHeadingToc) {
     for (const source of input.documents) {
-      const section = chapters.get(source.id)!.section;
+      const section = chapters.get(source.id)?.section;
+      if (!section) continue;
       const entries: ContentsEntry[] = [];
       const parents: { id: string; level: number }[] = [];
       for (const heading of section.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
@@ -117,15 +123,21 @@ export function composeDocuments(
     }
   }
   if (input.options.includeToc) {
+    // Retain unprinted ancestors as plain grouping labels, without empty chapters.
+    const included = new Set(chapters.keys());
+    for (const source of [...input.documents].reverse())
+      if (included.has(source.id) && source.parentId)
+        included.add(source.parentId);
     const toc = contents(
       doc,
-      input.documents.map((source) => ({
-        id: chapters.get(source.id)!.section.id,
-        title: source.title,
-        parentId: source.parentId
-          ? chapters.get(source.parentId)!.section.id
-          : null,
-      })),
+      input.documents
+        .filter((source) => included.has(source.id))
+        .map((source) => ({
+          id: `pdf-doc-${source.id}`,
+          title: source.title,
+          parentId: source.parentId ? `pdf-doc-${source.parentId}` : null,
+          grouping: !chapters.has(source.id),
+        })),
       "pdf-toc",
     );
     toc.setAttribute("aria-label", input.title);
@@ -150,6 +162,7 @@ interface ContentsEntry {
   id: string;
   title: string;
   parentId: string | null;
+  grouping?: boolean;
 }
 function contents(doc: Document, entries: ContentsEntry[], className: string) {
   const toc = doc.createElement("nav");
@@ -159,8 +172,8 @@ function contents(doc: Document, entries: ContentsEntry[], className: string) {
   toc.append(root);
   for (const entry of entries) {
     const row = doc.createElement("li");
-    const link = doc.createElement("a");
-    link.href = `#${entry.id}`;
+    const link = doc.createElement(entry.grouping ? "span" : "a");
+    if (!entry.grouping) link.setAttribute("href", `#${entry.id}`);
     link.textContent = entry.title;
     row.append(link);
     (entry.parentId ? lists.get(entry.parentId)! : root).append(row);

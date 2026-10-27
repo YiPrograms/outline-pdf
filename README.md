@@ -56,7 +56,7 @@ The override assumes your service is named `outline`. Replace `compose.yaml` wit
 
 Open **Document options → Export → Print to PDF…**, or the equivalent export menu for a collection.
 
-Choose the scope and select **Open print view**. Adjust the options in the right sidebar, then select **Print to PDF**. Set the paper size, scale, margins, and destination in your browser’s print dialog.
+Choose the scope and select **Open print view**. Select documents and drag them into order in the right sidebar, then select **Print to PDF**. Set the paper size, scale, margins, and destination in your browser’s print dialog.
 
 For page numbers, use a current Chromium-based browser and choose their position in the print view. Numbered tables of contents include paper and margin controls in the preview; print with the same paper, no browser margins, and 100% scale.
 

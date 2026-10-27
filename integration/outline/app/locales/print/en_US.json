@@ -35,5 +35,19 @@
   "Bottom right": "Bottom right",
   "Print settings": "Print settings",
   "Content": "Content",
-  "Page layout": "Page layout"
+  "Page layout": "Page layout",
+  "Documents": "Documents",
+  "Select all": "Select all",
+  "Deselect all": "Deselect all",
+  "Deselect empty": "Deselect empty",
+  "Select subtree": "Select subtree",
+  "Deselect subtree": "Deselect subtree",
+  "Move up": "Move up",
+  "Move down": "Move down",
+  "Reorder {{title}}": "Reorder {{title}}",
+  "Expand {{title}}": "Expand {{title}}",
+  "Collapse {{title}}": "Collapse {{title}}",
+  "Actions for {{title}}": "Actions for {{title}}",
+  "No documents selected.": "No documents selected.",
+  "Drag to reorder; use arrow keys to move.": "Drag to reorder; use arrow keys to move."
 }

@@ -3,6 +3,9 @@ import { usePrintTranslation } from "../utils/printI18n";
 import { PrintSettings } from "./PrintSettings";
 import { PrintPreview } from "./PrintPreview";
 import type { PrintStatus } from "./PrintPreview";
+import { PrintDocuments } from "./PrintDocuments";
+import { orderDocuments } from "../../../../src/documentSelection";
+import type { SourceDocument } from "../../../../src/types";
 import type { PrintSnapshot } from "../../../../src/types";
 import type { PageLayout } from "../../../../src/paginate";
 import type { PageNumberPosition } from "../../../../src/pageNumbers";
@@ -43,6 +46,21 @@ function PrintContent({
         : "none") as PrintSnapshot["options"]["pageNumbers"],
       tocPageNumbers: base.get("tocPageNumbers") === "true",
     }),
+  );
+  const [documents, setDocuments] = React.useState<SourceDocument[]>([]);
+  const [selection, setSelection] = React.useState<Set<string> | null>(null);
+  const [order, setOrder] = React.useState<string[]>([]);
+  const ordered = React.useMemo(
+    () => orderDocuments(documents, order),
+    [documents, order],
+  );
+  const selected = React.useMemo(
+    () => selection ?? new Set(documents.map((item) => item.id)),
+    [selection, documents],
+  );
+  const orderedIds = React.useMemo(
+    () => ordered.map((item) => item.id),
+    [ordered],
   );
   const [layout, setLayout] = React.useState<PageLayout>({
     paper: "A4",
@@ -99,21 +117,23 @@ function PrintContent({
         >
           {status.error
             ? t("Print preparation failed.")
-            : !status.ready
-              ? t("Preparing…")
-              : status.issues.map((issue, i) => (
-                  <React.Fragment key={issue.kind}>
-                    {i > 0 && " · "}
-                    <a href={`#${issue.id}`}>
-                      {t(
-                        issue.kind === "image"
-                          ? "Images unavailable: {{count}}"
-                          : "Diagrams unavailable: {{count}}",
-                        { count: issue.count },
-                      )}
-                    </a>
-                  </React.Fragment>
-                ))}
+            : status.empty
+              ? t("No documents selected.")
+              : !status.ready
+                ? t("Preparing…")
+                : status.issues.map((issue, i) => (
+                    <React.Fragment key={issue.kind}>
+                      {i > 0 && " · "}
+                      <a href={`#${issue.id}`}>
+                        {t(
+                          issue.kind === "image"
+                            ? "Images unavailable: {{count}}"
+                            : "Diagrams unavailable: {{count}}",
+                          { count: issue.count },
+                        )}
+                      </a>
+                    </React.Fragment>
+                  ))}
         </span>
         {!!status.excluded && <span>{t("Some documents were excluded.")}</span>}
       </header>
@@ -122,7 +142,7 @@ function PrintContent({
           options={options}
           onChange={update}
           tree={tree}
-          disabled={!status.ready && !status.error}
+          disabled={!status.ready && !status.error && !status.empty}
           layout={layout}
           setLayout={(value) => {
             preparing();
@@ -134,6 +154,25 @@ function PrintContent({
             setPosition(value);
           }}
           language={language}
+          documents={
+            tree ? (
+              <PrintDocuments
+                documents={ordered}
+                selected={selected}
+                onSelect={(ids) => {
+                  preparing();
+                  setSelection(ids);
+                }}
+                onOrder={(ids) => {
+                  preparing();
+                  setOrder(ids);
+                }}
+                includeComments={options.includeComments}
+                disabled={!status.ready && !status.empty}
+                language={language}
+              />
+            ) : null
+          }
         />
         <div className="print-preview">
           <PrintPreview
@@ -142,6 +181,9 @@ function PrintContent({
             options={options}
             layout={layout}
             position={position}
+            selectedIds={selected}
+            order={orderedIds}
+            onDocuments={setDocuments}
             onStatus={setStatus}
             commentsLabel={t("Comments")}
           />

@@ -32,6 +32,7 @@ export function PrintRadioGroup<T extends string>({
 }
 
 export function PrintSettings({
+  documents,
   options,
   onChange,
   tree,
@@ -42,6 +43,7 @@ export function PrintSettings({
   setPosition,
   language,
 }: {
+  documents: React.ReactNode;
   options: PrintSnapshot["options"];
   onChange: (options: Partial<PrintSnapshot["options"]>) => void;
   tree: boolean;
@@ -73,6 +75,7 @@ export function PrintSettings({
     >
       <summary>{t("Print settings")}</summary>
       <div className="print-settings-body">
+        {documents}
         <fieldset disabled={disabled}>
           <legend>{t("Content")}</legend>
           {toggle("includeCover", "Cover page")}

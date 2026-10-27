@@ -22,6 +22,7 @@ function compose(
     includeHeadingToc: false,
     includeCover: false,
   },
+  selectedIds?: ReadonlySet<string>,
 ) {
   const dom = new JSDOM(
     "<!doctype html><html><head></head><body></body></html>",
@@ -36,6 +37,7 @@ function compose(
       composeDocuments(dom.window.document, {
         title: "<script>cover</script>",
         documents: rendered,
+        selectedIds,
         options,
       }),
     );
@@ -336,6 +338,52 @@ test("repeated native SVG diagrams preserve their own markers and root IDs", () 
         `#${svg.querySelector("marker")?.id}`,
       );
     }
+  } finally {
+    dom.window.close();
+  }
+});
+
+test("unprinted ancestors group selected descendants without chapters, page links or missing branches", () => {
+  const dom = compose(
+    [
+      { ...source("folder", "<p>FOLDER_BODY</p>"), title: "Folder" },
+      {
+        ...source(
+          "a",
+          '<h2 id="intro">Intro</h2><a href="/doc/folder">Parent</a><a href="/doc/b#h-install">Sibling</a>',
+        ),
+        parentId: "folder",
+      },
+      { ...source("b"), parentId: "folder" },
+      source("excluded"),
+    ],
+    { includeToc: true, includeHeadingToc: true, includeCover: false },
+    new Set(["a", "b"]),
+  );
+  try {
+    const doc = dom.window.document;
+    assert.deepEqual(
+      [...doc.querySelectorAll(".pdf-chapter")].map((el) => el.id),
+      ["pdf-doc-a", "pdf-doc-b"],
+    );
+    assert.equal(doc.body.textContent?.includes("FOLDER_BODY"), false);
+    const group = doc.querySelector(".pdf-toc > ol > li")!;
+    assert.equal(group.querySelector(":scope > span")?.textContent, "Folder");
+    assert.equal(group.querySelector(":scope > a"), null);
+    assert.equal(group.querySelectorAll("ol li a").length, 2);
+    assert.equal(doc.querySelectorAll(".pdf-toc > ol > li").length, 1);
+    assert.equal(
+      doc.querySelector("#pdf-doc-a > :nth-child(2)")?.className,
+      "pdf-document-toc",
+    );
+    const links = [...doc.querySelectorAll("#pdf-doc-a a")].filter(
+      (el) => !el.closest("nav"),
+    );
+    assert.equal(
+      links[0]?.getAttribute("href"),
+      "https://outline.example.test/doc/folder",
+    );
+    assert.ok(links[1]?.getAttribute("href")?.startsWith("#pdf-doc-b-"));
   } finally {
     dom.window.close();
   }

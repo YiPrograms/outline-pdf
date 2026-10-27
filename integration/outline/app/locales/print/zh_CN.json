@@ -35,5 +35,19 @@
   "Bottom right": "右下",
   "Print settings": "打印设置",
   "Content": "内容",
-  "Page layout": "页面布局"
+  "Page layout": "页面布局",
+  "Documents": "文档",
+  "Select all": "全选",
+  "Deselect all": "全部取消",
+  "Deselect empty": "取消空白文档",
+  "Select subtree": "选取整个子树",
+  "Deselect subtree": "取消整个子树",
+  "Move up": "上移",
+  "Move down": "下移",
+  "Reorder {{title}}": "调整 {{title}} 的顺序",
+  "Expand {{title}}": "展开 {{title}}",
+  "Collapse {{title}}": "收起 {{title}}",
+  "Actions for {{title}}": "{{title}} 的操作",
+  "No documents selected.": "尚未选取文档。",
+  "Drag to reorder; use arrow keys to move.": "拖动排序，或使用方向键移动。"
 }
